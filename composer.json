@@ -1,0 +1,17 @@
+{
+    "name": "iidestiny\/flysystem-oss",
+    "description": "An oss adapter",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "iidestiny",
+            "email": "iidestiny@vip.qq.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Iidestiny\\FlysystemOss\\": "src"
+        }
+    }
+}

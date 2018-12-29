@@ -2,6 +2,10 @@
 
 <p align="center">:floppy_disk:  Flysystem adapter for the oss storage.</p>
 
+<p align="center">
+<a href="https://github.com/iiDestiny/flysystem-oss"><img src="https://travis-ci.org/iiDestiny/flysystem-oss.svg?branch=master"></a>
+</p>
+
 ## Requirement
 
 - PHP >= 7.0

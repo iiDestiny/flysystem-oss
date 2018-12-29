@@ -17,10 +17,7 @@
     "autoload": {
         "psr-4": {
             "Iidestiny\\Flysystem\\Oss\\": "src"
-        },
-        "files": [
-            "src/helper.php"
-        ]
+        }
     },
     "require-dev": {
         "mockery/mockery": "^1.2",

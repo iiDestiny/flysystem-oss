@@ -89,7 +89,9 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @param string $contents
      * @param Config $config
+     *
      * @return array|false|void
+     *
      * @throws OssException
      */
     public function write($path, $contents, Config $config)
@@ -108,10 +110,12 @@ class OssAdapter extends AbstractAdapter
     /**
      * Write a new file using a stream.
      *
-     * @param string $path
+     * @param string   $path
      * @param resource $resource
-     * @param Config $config
+     * @param Config   $config
+     *
      * @return array|false|void
+     *
      * @throws OssException
      */
     public function writeStream($path, $resource, Config $config)
@@ -127,7 +131,9 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @param string $contents
      * @param Config $config
+     *
      * @return array|false|void
+     *
      * @throws OssException
      */
     public function update($path, $contents, Config $config)
@@ -138,10 +144,12 @@ class OssAdapter extends AbstractAdapter
     /**
      * Update a file using a stream.
      *
-     * @param string $path
+     * @param string   $path
      * @param resource $resource
-     * @param Config $config
+     * @param Config   $config
+     *
      * @return array|false|void
+     *
      * @throws OssException
      */
     public function updateStream($path, $resource, Config $config)

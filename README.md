@@ -90,6 +90,10 @@ $flysystem->addPlugin(new FileUrl());
 string $flysystem->getUrl('file.md');
 ```
 
+## Integration
+
+- Laravel 5：[iidestiny/laravel-filesystem-oss](https://github.com/iiDestiny/laravel-filesystem-oss)
+
 ## reference
 
 - [overtrue/flysystem-qiniu](https://github.com/overtrue/flysystem-qiniu)

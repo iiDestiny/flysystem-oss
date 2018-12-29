@@ -23,7 +23,7 @@ class OssAdapterTest extends TestCase
      */
     public function setUp()
     {
-        require_once __DIR__.'/helpers.php';
+        require_once __DIR__ . '/helpers.php';
     }
 
     /**
@@ -57,8 +57,8 @@ class OssAdapterTest extends TestCase
             ->andReturns(['response', false], ['response', true])
             ->twice();
 
-        $this->assertSame(['response', false], $adapter->write('foo/bar.md', 'content', new Config()));
-        $this->assertSame(['response', true], $adapter->write('foo/bar.md', 'content', new Config()));
+        $this->assertNull($adapter->write('foo/bar.md', 'content', new Config()));
+        $this->assertNull($adapter->write('foo/bar.md', 'content', new Config()));
     }
 
     /**
@@ -72,6 +72,6 @@ class OssAdapterTest extends TestCase
 
         $result = $adapter->writeStream('foo.md', tmpfile(), new Config());
 
-        $this->assertEquals(true, $result);
+        $this->assertNull($result);
     }
 }

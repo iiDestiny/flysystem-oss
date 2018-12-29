@@ -89,10 +89,8 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @param string $contents
      * @param Config $config
-     *
-     * @return array|false|null
-     *
-     * @throws \OSS\Core\OssException
+     * @return array|false|void
+     * @throws OssException
      */
     public function write($path, $contents, Config $config)
     {
@@ -104,25 +102,23 @@ class OssAdapter extends AbstractAdapter
             $options = $config->get('options');
         }
 
-        return $this->client()->putObject($this->bucket, $path, $contents, $options);
+        $this->client()->putObject($this->bucket, $path, $contents, $options);
     }
 
     /**
      * Write a new file using a stream.
      *
-     * @param string   $path
+     * @param string $path
      * @param resource $resource
-     * @param Config   $config
-     *
-     * @return array|false|null
-     *
-     * @throws \OSS\Core\OssException
+     * @param Config $config
+     * @return array|false|void
+     * @throws OssException
      */
     public function writeStream($path, $resource, Config $config)
     {
         $contents = stream_get_contents($resource);
 
-        return $this->write($path, $contents, $config);
+        $this->write($path, $contents, $config);
     }
 
     /**
@@ -131,30 +127,26 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @param string $contents
      * @param Config $config
-     *
-     * @return array|false|null
-     *
-     * @throws \OSS\Core\OssException
+     * @return array|false|void
+     * @throws OssException
      */
     public function update($path, $contents, Config $config)
     {
-        return $this->write($path, $contents, $config);
+        $this->write($path, $contents, $config);
     }
 
     /**
      * Update a file using a stream.
      *
-     * @param string   $path
+     * @param string $path
      * @param resource $resource
-     * @param Config   $config
-     *
-     * @return array|false|null
-     *
-     * @throws \OSS\Core\OssException
+     * @param Config $config
+     * @return array|false|void
+     * @throws OssException
      */
     public function updateStream($path, $resource, Config $config)
     {
-        return $this->writeStream($path, $resource, $config);
+        $this->writeStream($path, $resource, $config);
     }
 
     /**

@@ -7,3 +7,4 @@ composer.lock
 .php_cs.cache
 .idea
 index.php
+src/helper.php

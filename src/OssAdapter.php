@@ -38,8 +38,6 @@ class OssAdapter extends AbstractAdapter
      */
     protected $isCName;
 
-    protected $domain;
-
     /**
      * OssAdapter constructor.
      *
@@ -48,16 +46,14 @@ class OssAdapter extends AbstractAdapter
      * @param $endpoint
      * @param $bucket
      * @param bool $isCName
-     * @param null $domain
      */
-    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $domain = null)
+    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false)
     {
         $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
         $this->endpoint = $endpoint;
         $this->bucket = $bucket;
         $this->isCName = $isCName;
-        $this->domain = $domain;
     }
 
 
@@ -235,38 +231,263 @@ class OssAdapter extends AbstractAdapter
         return $this->client()->doesObjectExist($this->bucket, $path);
     }
 
+    /**
+     * Get resource url.
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    public function getUrl($path)
+    {
+        return $this->normalizeHost() . ltrim($path, '/');
+    }
+
+    /**
+     * read a file
+     *
+     * @param string $path
+     * @return array|bool|false
+     */
     public function read($path)
     {
-        // TODO: Implement read() method.
+        try {
+            $contents = $this->getObject($path);
+        } catch (OssException $exception) {
+            return false;
+        }
+
+        return compact('contents', 'path');
     }
 
+    /**
+     * read a file stream
+     *
+     * @param string $path
+     * @return array|bool|false
+     */
     public function readStream($path)
     {
-        // TODO: Implement readStream() method.
+        try {
+            $stream = $this->getObject($path);
+        } catch (OssException $exception) {
+            return false;
+        }
+
+        return compact('stream', 'path');
     }
 
+    /**
+     * Lists all files in the directory
+     *
+     * @param string $directory
+     * @param bool $recursive
+     * @return array
+     * @throws OssException
+     */
     public function listContents($directory = '', $recursive = false)
     {
-        // TODO: Implement listContents() method.
+        $list = [];
+
+        $result = $this->listDirObjects($directory, true);
+
+        if (!empty($result['objects'])) {
+            foreach ($result['objects'] as $files) {
+                if (!$fileInfo = $this->normalizeFileInfo($files)) {
+                    continue;
+                }
+
+                $list[] = $fileInfo;
+            }
+        }
+
+        return $list;
     }
 
+    /**
+     * get meta data
+     *
+     * @param string $path
+     * @return array|bool|false
+     */
     public function getMetadata($path)
     {
-        // TODO: Implement getMetadata() method.
+        $path = $this->applyPathPrefix($path);
+
+        try {
+            $metadata = $this->client()->getObjectMeta($this->bucket, $path);
+        } catch (OssException $exception) {
+            return false;
+        }
+
+        return $metadata;
     }
 
+    /**
+     * get the size of file
+     *
+     * @param string $path
+     * @return array|false
+     */
     public function getSize($path)
     {
-        // TODO: Implement getSize() method.
+        return $this->normalizeFileInfo(['Key' => $path]);
     }
 
+    /**
+     * get mime type
+     *
+     * @param string $path
+     * @return array|bool|false
+     */
     public function getMimetype($path)
     {
-        // TODO: Implement getMimetype() method.
+        if (!$fileInfo = $this->normalizeFileInfo(['Key' => $path])) {
+            return false;
+        }
+
+        return ['mimetype' => $fileInfo['type']];
     }
 
+    /**
+     * get timestamp
+     *
+     * @param string $path
+     * @return array|false
+     */
     public function getTimestamp($path)
     {
-        // TODO: Implement getTimestamp() method.
+        return $this->normalizeFileInfo(['Key' => $path]);
+    }
+
+    /**
+     * normalize Host
+     *
+     * @return string
+     */
+    protected function normalizeHost()
+    {
+        if ($this->isCName) {
+            $domain = $this->endpoint;
+        } else {
+            $domain = $this->bucket . '.' . $this->endpoint;
+        }
+
+        if (0 !== stripos($domain, 'https://') && 0 !== stripos($domain, 'http://')) {
+            $domain = "http://{$domain}";
+        }
+
+        return rtrim($domain, '/') . '/';
+    }
+
+    /**
+     * Read an object from the OssClient.
+     *
+     * @param $path
+     * @return string
+     * @throws OssException
+     */
+    protected function getObject($path)
+    {
+        $path = $this->applyPathPrefix($path);
+
+        return $this->client()->getObject($this->bucket, $path);
+    }
+
+    /**
+     * File list core method
+     *
+     * @param string $dirname
+     * @param bool $recursive
+     * @return array
+     * @throws OssException
+     */
+    public function listDirObjects($dirname = '', $recursive = false)
+    {
+        $delimiter = '/';
+        $nextMarker = '';
+        $maxkeys = 1000;
+
+        $result = [];
+
+        while (true) {
+            $options = [
+                'delimiter' => $delimiter,
+                'prefix'    => $dirname,
+                'max-keys'  => $maxkeys,
+                'marker'    => $nextMarker,
+            ];
+
+            try {
+                $listObjectInfo = $this->client()->listObjects($this->bucket, $options);
+            } catch (OssException $exception) {
+                throw $exception;
+            }
+
+            $nextMarker = $listObjectInfo->getNextMarker();
+            $objectList = $listObjectInfo->getObjectList();
+            $prefixList = $listObjectInfo->getPrefixList();
+
+            if (!empty($objectList)) {
+                foreach ($objectList as $objectInfo) {
+                    $object['Prefix'] = $dirname;
+                    $object['Key'] = $objectInfo->getKey();
+                    $object['LastModified'] = $objectInfo->getLastModified();
+                    $object['eTag'] = $objectInfo->getETag();
+                    $object['Type'] = $objectInfo->getType();
+                    $object['Size'] = $objectInfo->getSize();
+                    $object['StorageClass'] = $objectInfo->getStorageClass();
+                    $result['objects'][] = $object;
+                }
+            } else {
+                $result["objects"] = [];
+            }
+
+            if (!empty($prefixList)) {
+                foreach ($prefixList as $prefixInfo) {
+                    $result['prefix'][] = $prefixInfo->getPrefix();
+                }
+            } else {
+                $result['prefix'] = [];
+            }
+
+            // Recursive directory
+            if ($recursive) {
+                foreach ($result['prefix'] as $prefix) {
+                    $next = $this->listDirObjects($prefix, $recursive);
+                    $result["objects"] = array_merge($result['objects'], $next["objects"]);
+                }
+            }
+
+            if ($nextMarker === '') {
+                break;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * normalize file info
+     *
+     * @param array $stats
+     * @return array
+     */
+    protected function normalizeFileInfo(array $stats)
+    {
+        $filePath = ltrim($stats['Key'], '/');
+
+        $meta = $this->getMetadata($filePath) ?? [];
+
+        if (empty($meta)) {
+            return [];
+        }
+
+        return [
+            'type'      => $meta['content-type'],
+            'path'      => $filePath,
+            'timestamp' => $meta['info']['filetime'],
+            'size'      => $meta['content-length'],
+        ];
     }
 }

@@ -1,6 +1,6 @@
-<h1 align="center">:floppy_disk: flysystem-oss </h1>
+<h1 align="center">flysystem-oss </h1>
 
-<p align="center"> An oss adapter.</p>
+<p align="center">:floppy_disk:  Flysystem adapter for the oss storage.</p>
 
 ## Requirement
 

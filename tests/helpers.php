@@ -1,8 +1,10 @@
 <?php
 
 /*
- * This file is part of the overtrue/flysystem-qiniu.
- * (c) overtrue <i@overtrue.me>
+ * This file is part of the iidestiny/flysystem-oss.
+ *
+ * (c) iidestiny <iidestiny@vip.qq.com>
+ *
  * This source file is subject to the MIT license that is bundled
  * with this source code in the file LICENSE.
  */

@@ -1,7 +1,15 @@
 <?php
 
-namespace Iidestiny\Flysystem\Oss;
+/*
+ * This file is part of the iidestiny/flysystem-oss.
+ *
+ * (c) iidestiny <iidestiny@vip.qq.com>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
+namespace Iidestiny\Flysystem\Oss;
 
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
@@ -10,9 +18,8 @@ use OSS\Core\OssException;
 use OSS\OssClient;
 
 /**
- * Class OssAdapter
+ * Class OssAdapter.
  *
- * @package Iidestiny\Flysystem\Oss
  * @author iidestiny <iidestiny@vip.qq.com>
  */
 class OssAdapter extends AbstractAdapter
@@ -62,11 +69,11 @@ class OssAdapter extends AbstractAdapter
         $this->isCName = $isCName;
     }
 
-
     /**
-     * create oss client
+     * create oss client.
      *
      * @return OssClient
+     *
      * @throws \OSS\Core\OssException
      */
     protected function client()
@@ -77,12 +84,14 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * write a file
+     * write a file.
      *
      * @param string $path
      * @param string $contents
      * @param Config $config
+     *
      * @return array|false|null
+     *
      * @throws \OSS\Core\OssException
      */
     public function write($path, $contents, Config $config)
@@ -101,10 +110,12 @@ class OssAdapter extends AbstractAdapter
     /**
      * Write a new file using a stream.
      *
-     * @param string $path
+     * @param string   $path
      * @param resource $resource
-     * @param Config $config
+     * @param Config   $config
+     *
      * @return array|false|null
+     *
      * @throws \OSS\Core\OssException
      */
     public function writeStream($path, $resource, Config $config)
@@ -120,7 +131,9 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @param string $contents
      * @param Config $config
+     *
      * @return array|false|null
+     *
      * @throws \OSS\Core\OssException
      */
     public function update($path, $contents, Config $config)
@@ -131,10 +144,12 @@ class OssAdapter extends AbstractAdapter
     /**
      * Update a file using a stream.
      *
-     * @param string $path
+     * @param string   $path
      * @param resource $resource
-     * @param Config $config
+     * @param Config   $config
+     *
      * @return array|false|null
+     *
      * @throws \OSS\Core\OssException
      */
     public function updateStream($path, $resource, Config $config)
@@ -143,11 +158,13 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * rename a file
+     * rename a file.
      *
      * @param string $path
      * @param string $newpath
+     *
      * @return bool
+     *
      * @throws OssException
      */
     public function rename($path, $newpath)
@@ -160,10 +177,11 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * copy a file
+     * copy a file.
      *
      * @param string $path
      * @param string $newpath
+     *
      * @return bool
      */
     public function copy($path, $newpath)
@@ -181,10 +199,12 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * delete a file
+     * delete a file.
      *
      * @param string $path
+     *
      * @return bool
+     *
      * @throws OssException
      */
     public function delete($path)
@@ -201,9 +221,10 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * Delete a directory
+     * Delete a directory.
      *
      * @param string $dirname
+     *
      * @return bool
      */
     public function deleteDir($dirname)
@@ -212,10 +233,11 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * create a directory
+     * create a directory.
      *
      * @param string $dirname
      * @param Config $config
+     *
      * @return array|false
      */
     public function createDir($dirname, Config $config)
@@ -227,7 +249,9 @@ class OssAdapter extends AbstractAdapter
      * Check whether a file exists.
      *
      * @param string $path
+     *
      * @return array|bool|null
+     *
      * @throws \OSS\Core\OssException
      */
     public function has($path)
@@ -246,13 +270,14 @@ class OssAdapter extends AbstractAdapter
      */
     public function getUrl($path)
     {
-        return $this->normalizeHost() . ltrim($path, '/');
+        return $this->normalizeHost().ltrim($path, '/');
     }
 
     /**
-     * read a file
+     * read a file.
      *
      * @param string $path
+     *
      * @return array|bool|false
      */
     public function read($path)
@@ -267,9 +292,10 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * read a file stream
+     * read a file stream.
      *
      * @param string $path
+     *
      * @return array|bool|false
      */
     public function readStream($path)
@@ -284,11 +310,13 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * Lists all files in the directory
+     * Lists all files in the directory.
      *
      * @param string $directory
-     * @param bool $recursive
+     * @param bool   $recursive
+     *
      * @return array
+     *
      * @throws OssException
      */
     public function listContents($directory = '', $recursive = false)
@@ -311,9 +339,10 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * get meta data
+     * get meta data.
      *
      * @param string $path
+     *
      * @return array|bool|false
      */
     public function getMetadata($path)
@@ -330,9 +359,10 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * get the size of file
+     * get the size of file.
      *
      * @param string $path
+     *
      * @return array|false
      */
     public function getSize($path)
@@ -341,9 +371,10 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * get mime type
+     * get mime type.
      *
      * @param string $path
+     *
      * @return array|bool|false
      */
     public function getMimetype($path)
@@ -356,9 +387,10 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * get timestamp
+     * get timestamp.
      *
      * @param string $path
+     *
      * @return array|false
      */
     public function getTimestamp($path)
@@ -367,7 +399,7 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * normalize Host
+     * normalize Host.
      *
      * @return string
      */
@@ -376,21 +408,23 @@ class OssAdapter extends AbstractAdapter
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket . '.' . $this->endpoint;
+            $domain = $this->bucket.'.'.$this->endpoint;
         }
 
         if (0 !== stripos($domain, 'https://') && 0 !== stripos($domain, 'http://')) {
             $domain = "http://{$domain}";
         }
 
-        return rtrim($domain, '/') . '/';
+        return rtrim($domain, '/').'/';
     }
 
     /**
      * Read an object from the OssClient.
      *
      * @param $path
+     *
      * @return string
+     *
      * @throws OssException
      */
     protected function getObject($path)
@@ -401,11 +435,13 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * File list core method
+     * File list core method.
      *
      * @param string $dirname
-     * @param bool $recursive
+     * @param bool   $recursive
+     *
      * @return array
+     *
      * @throws OssException
      */
     public function listDirObjects($dirname = '', $recursive = false)
@@ -419,9 +455,9 @@ class OssAdapter extends AbstractAdapter
         while (true) {
             $options = [
                 'delimiter' => $delimiter,
-                'prefix'    => $dirname,
-                'max-keys'  => $maxkeys,
-                'marker'    => $nextMarker,
+                'prefix' => $dirname,
+                'max-keys' => $maxkeys,
+                'marker' => $nextMarker,
             ];
 
             try {
@@ -446,7 +482,7 @@ class OssAdapter extends AbstractAdapter
                     $result['objects'][] = $object;
                 }
             } else {
-                $result["objects"] = [];
+                $result['objects'] = [];
             }
 
             if (!empty($prefixList)) {
@@ -461,11 +497,11 @@ class OssAdapter extends AbstractAdapter
             if ($recursive) {
                 foreach ($result['prefix'] as $prefix) {
                     $next = $this->listDirObjects($prefix, $recursive);
-                    $result["objects"] = array_merge($result['objects'], $next["objects"]);
+                    $result['objects'] = array_merge($result['objects'], $next['objects']);
                 }
             }
 
-            if ($nextMarker === '') {
+            if ('' === $nextMarker) {
                 break;
             }
         }
@@ -474,9 +510,10 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * normalize file info
+     * normalize file info.
      *
      * @param array $stats
+     *
      * @return array
      */
     protected function normalizeFileInfo(array $stats)
@@ -490,10 +527,10 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type'      => $meta['content-type'],
-            'path'      => $filePath,
+            'type' => $meta['content-type'],
+            'path' => $filePath,
             'timestamp' => $meta['info']['filetime'],
-            'size'      => $meta['content-length'],
+            'size' => $meta['content-length'],
         ];
     }
 }

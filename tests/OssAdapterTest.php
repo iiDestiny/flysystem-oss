@@ -23,7 +23,7 @@ class OssAdapterTest extends TestCase
      */
     public function setUp()
     {
-        require_once __DIR__ . '/helpers.php';
+        require_once __DIR__.'/helpers.php';
     }
 
     /**

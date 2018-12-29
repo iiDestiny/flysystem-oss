@@ -57,8 +57,8 @@ class OssAdapterTest extends TestCase
             ->andReturns(['response', false], ['response', true])
             ->twice();
 
-        $this->assertNull($adapter->write('foo/bar.md', 'content', new Config()));
-        $this->assertNull($adapter->write('foo/bar.md', 'content', new Config()));
+        $this->assertTrue($adapter->write('foo/bar.md', 'content', new Config()));
+        $this->assertTrue($adapter->write('foo/bar.md', 'content', new Config()));
     }
 
     /**
@@ -72,6 +72,6 @@ class OssAdapterTest extends TestCase
 
         $result = $adapter->writeStream('foo.md', tmpfile(), new Config());
 
-        $this->assertNull($result);
+        $this->assertTrue($result);
     }
 }

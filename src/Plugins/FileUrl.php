@@ -28,11 +28,10 @@ class FileUrl extends AbstractPlugin
     /**
      * handle.
      *
-     * @param null $path
-     *
+     * @param $path
      * @return mixed
      */
-    public function handle($path = null)
+    public function handle($path)
     {
         return $this->filesystem->getAdapter()->getUrl($path);
     }

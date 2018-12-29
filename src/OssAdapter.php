@@ -9,6 +9,12 @@ use League\Flysystem\Config;
 use OSS\Core\OssException;
 use OSS\OssClient;
 
+/**
+ * Class OssAdapter
+ *
+ * @package Iidestiny\Flysystem\Oss
+ * @author iidestiny <iidestiny@vip.qq.com>
+ */
 class OssAdapter extends AbstractAdapter
 {
     use NotSupportingVisibilityTrait;

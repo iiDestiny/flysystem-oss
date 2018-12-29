@@ -1,7 +1,15 @@
 <?php
 
-namespace Overtrue\Flysystem\Qiniu;
+/*
+ * This file is part of the iidestiny/flysystem-oss.
+ *
+ * (c) iidestiny <iidestiny@vip.qq.com>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
+namespace Overtrue\Flysystem\Qiniu;
 
 use Iidestiny\Flysystem\Oss\OssAdapter;
 use League\Flysystem\Config;
@@ -11,15 +19,15 @@ use Mockery;
 class OssAdapterTest extends TestCase
 {
     /**
-     * set up
+     * set up.
      */
     public function setUp()
     {
-        require_once __DIR__ . '/helpers.php';
+        require_once __DIR__.'/helpers.php';
     }
 
     /**
-     * oss provider
+     * oss provider.
      *
      * @return array
      */

@@ -75,6 +75,8 @@ Get oss file visit url
 use Iidestiny\Flysystem\Oss\Plugins\FileUrl
 
 $flysystem->addPlugin(new FileUrl());
+
+string $flysystem->getUrl('file.md');
 ```
 
 ## reference && thanks

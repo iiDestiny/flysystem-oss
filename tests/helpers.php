@@ -9,7 +9,6 @@
  * with this source code in the file LICENSE.
  */
 
-namespace Overtrue\Flysystem\Qiniu;
 
 function file_get_contents($path)
 {

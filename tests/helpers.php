@@ -11,6 +11,7 @@
 
 namespace Iidestiny\Flysystem\Oss;
 
+
 function file_get_contents($path)
 {
     return "contents of {$path}";

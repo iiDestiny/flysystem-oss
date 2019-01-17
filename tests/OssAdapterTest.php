@@ -9,6 +9,8 @@
  * with this source code in the file LICENSE.
  */
 
+namespace Iidestiny\Flysystem\Oss;
+
 use Iidestiny\Flysystem\Oss\OssAdapter;
 use League\Flysystem\Config;
 use PHPUnit\Framework\TestCase;

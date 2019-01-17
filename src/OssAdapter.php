@@ -52,35 +52,69 @@ class OssAdapter extends AbstractAdapter
     protected $isCName;
 
     /**
+     * @var OssClient
+     */
+    protected $client;
+
+    /**
+     * @var array|mixed[]
+     */
+    protected $params;
+
+    /**
      * OssAdapter constructor.
      *
-     * @param $accessKeyId
-     * @param $accessKeySecret
-     * @param $endpoint
-     * @param $bucket
-     * @param bool $isCName
+     * @param       $accessKeyId
+     * @param       $accessKeySecret
+     * @param       $endpoint
+     * @param       $bucket
+     * @param bool  $isCName
+     * @param mixed ...$params
+     *
+     * @throws OssException
      */
-    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false)
+    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, ...$params)
     {
         $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
         $this->endpoint = $endpoint;
         $this->bucket = $bucket;
         $this->isCName = $isCName;
+        $this->params = $params;
+        $this->initClient();
     }
 
     /**
-     * create oss client.
+     * init oss client.
      *
-     * @return OssClient
-     *
-     * @throws \OSS\Core\OssException
+     * @throws OssException
      */
-    protected function client()
+    protected function initClient()
     {
-        $client = new OssClient($this->accessKeyId, $this->accessKeySecret, $this->endpoint, $this->isCName);
+        if (empty($this->client)) {
+            $this->client = new OssClient($this->accessKeyId, $this->accessKeySecret, $this->endpoint, $this->isCName, ...$this->params);
+        }
+    }
 
-        return $client;
+    /**
+     * sign url
+     *
+     * @param $path
+     * @param $timeout
+     *
+     * @return bool|string
+     */
+    public function signUrl($path, $timeout)
+    {
+        $path = $this->applyPathPrefix($path);
+
+        try {
+            $path = $this->client->signUrl($this->bucket, $path, $timeout);
+        } catch (OssException $exception) {
+            return false;
+        }
+
+        return $path;
     }
 
     /**
@@ -91,8 +125,6 @@ class OssAdapter extends AbstractAdapter
      * @param Config $config
      *
      * @return array|bool|false
-     *
-     * @throws OssException
      */
     public function write($path, $contents, Config $config)
     {
@@ -104,7 +136,7 @@ class OssAdapter extends AbstractAdapter
             $options = $config->get('options');
         }
 
-        $this->client()->putObject($this->bucket, $path, $contents, $options);
+        $this->client->putObject($this->bucket, $path, $contents, $options);
 
         return true;
     }
@@ -117,8 +149,6 @@ class OssAdapter extends AbstractAdapter
      * @param Config   $config
      *
      * @return array|bool|false
-     *
-     * @throws OssException
      */
     public function writeStream($path, $resource, Config $config)
     {
@@ -135,8 +165,6 @@ class OssAdapter extends AbstractAdapter
      * @param Config $config
      *
      * @return array|bool|false
-     *
-     * @throws OssException
      */
     public function update($path, $contents, Config $config)
     {
@@ -151,8 +179,6 @@ class OssAdapter extends AbstractAdapter
      * @param Config   $config
      *
      * @return array|bool|false
-     *
-     * @throws OssException
      */
     public function updateStream($path, $resource, Config $config)
     {
@@ -192,7 +218,7 @@ class OssAdapter extends AbstractAdapter
         $newpath = $this->applyPathPrefix($newpath);
 
         try {
-            $this->client()->copyObject($this->bucket, $path, $this->bucket, $newpath);
+            $this->client->copyObject($this->bucket, $path, $this->bucket, $newpath);
         } catch (OssException $exception) {
             return false;
         }
@@ -214,7 +240,7 @@ class OssAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         try {
-            $this->client()->deleteObject($this->bucket, $path);
+            $this->client->deleteObject($this->bucket, $path);
         } catch (OssException $ossException) {
             return false;
         }
@@ -253,14 +279,12 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      *
      * @return array|bool|null
-     *
-     * @throws \OSS\Core\OssException
      */
     public function has($path)
     {
         $path = $this->applyPathPrefix($path);
 
-        return $this->client()->doesObjectExist($this->bucket, $path);
+        return $this->client->doesObjectExist($this->bucket, $path);
     }
 
     /**
@@ -272,7 +296,7 @@ class OssAdapter extends AbstractAdapter
      */
     public function getUrl($path)
     {
-        return $this->normalizeHost().ltrim($path, '/');
+        return $this->normalizeHost() . ltrim($path, '/');
     }
 
     /**
@@ -352,7 +376,7 @@ class OssAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         try {
-            $metadata = $this->client()->getObjectMeta($this->bucket, $path);
+            $metadata = $this->client->getObjectMeta($this->bucket, $path);
         } catch (OssException $exception) {
             return false;
         }
@@ -410,14 +434,14 @@ class OssAdapter extends AbstractAdapter
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket.'.'.$this->endpoint;
+            $domain = $this->bucket . '.' . $this->endpoint;
         }
 
         if (0 !== stripos($domain, 'https://') && 0 !== stripos($domain, 'http://')) {
             $domain = "http://{$domain}";
         }
 
-        return rtrim($domain, '/').'/';
+        return rtrim($domain, '/') . '/';
     }
 
     /**
@@ -426,14 +450,12 @@ class OssAdapter extends AbstractAdapter
      * @param $path
      *
      * @return string
-     *
-     * @throws OssException
      */
     protected function getObject($path)
     {
         $path = $this->applyPathPrefix($path);
 
-        return $this->client()->getObject($this->bucket, $path);
+        return $this->client->getObject($this->bucket, $path);
     }
 
     /**
@@ -457,13 +479,13 @@ class OssAdapter extends AbstractAdapter
         while (true) {
             $options = [
                 'delimiter' => $delimiter,
-                'prefix' => $dirname,
-                'max-keys' => $maxkeys,
-                'marker' => $nextMarker,
+                'prefix'    => $dirname,
+                'max-keys'  => $maxkeys,
+                'marker'    => $nextMarker,
             ];
 
             try {
-                $listObjectInfo = $this->client()->listObjects($this->bucket, $options);
+                $listObjectInfo = $this->client->listObjects($this->bucket, $options);
             } catch (OssException $exception) {
                 throw $exception;
             }
@@ -529,10 +551,10 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type' => $meta['content-type'],
-            'path' => $filePath,
+            'type'      => $meta['content-type'],
+            'path'      => $filePath,
             'timestamp' => $meta['info']['filetime'],
-            'size' => $meta['content-length'],
+            'size'      => $meta['content-length'],
         ];
     }
 }

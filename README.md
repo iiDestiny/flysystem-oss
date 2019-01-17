@@ -80,14 +80,19 @@ int $flysystem->getTimestamp('file.md');
 
 ## Plugins
 
-Get oss file visit url
-
 ```php
 use Iidestiny\Flysystem\Oss\Plugins\FileUrl
+use Iidestiny\Flysystem\Oss\Plugins\SignUrl
 
 $flysystem->addPlugin(new FileUrl());
 
+// Get oss file visit url
 string $flysystem->getUrl('file.md');
+
+$flysystem->addPlugin(new SignUrl());
+
+// Access control sign url
+ string $flysystem->signUrl('file.md', $timeout);
 ```
 
 ## Integration

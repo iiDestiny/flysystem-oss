@@ -97,7 +97,7 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * sign url
+     * sign url.
      *
      * @param $path
      * @param $timeout
@@ -296,7 +296,7 @@ class OssAdapter extends AbstractAdapter
      */
     public function getUrl($path)
     {
-        return $this->normalizeHost() . ltrim($path, '/');
+        return $this->normalizeHost().ltrim($path, '/');
     }
 
     /**
@@ -434,14 +434,14 @@ class OssAdapter extends AbstractAdapter
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket . '.' . $this->endpoint;
+            $domain = $this->bucket.'.'.$this->endpoint;
         }
 
         if (0 !== stripos($domain, 'https://') && 0 !== stripos($domain, 'http://')) {
             $domain = "http://{$domain}";
         }
 
-        return rtrim($domain, '/') . '/';
+        return rtrim($domain, '/').'/';
     }
 
     /**
@@ -479,9 +479,9 @@ class OssAdapter extends AbstractAdapter
         while (true) {
             $options = [
                 'delimiter' => $delimiter,
-                'prefix'    => $dirname,
-                'max-keys'  => $maxkeys,
-                'marker'    => $nextMarker,
+                'prefix' => $dirname,
+                'max-keys' => $maxkeys,
+                'marker' => $nextMarker,
             ];
 
             try {
@@ -551,10 +551,10 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type'      => $meta['content-type'],
-            'path'      => $filePath,
+            'type' => $meta['content-type'],
+            'path' => $filePath,
             'timestamp' => $meta['info']['filetime'],
-            'size'      => $meta['content-length'],
+            'size' => $meta['content-length'],
         ];
     }
 }

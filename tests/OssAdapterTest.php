@@ -11,7 +11,6 @@
 
 namespace Iidestiny\Flysystem\Oss;
 
-use Iidestiny\Flysystem\Oss\OssAdapter;
 use League\Flysystem\Config;
 use PHPUnit\Framework\TestCase;
 use Mockery;

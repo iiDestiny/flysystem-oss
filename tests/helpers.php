@@ -9,7 +9,6 @@
  * with this source code in the file LICENSE.
  */
 
-
 function file_get_contents($path)
 {
     return "contents of {$path}";

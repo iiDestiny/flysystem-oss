@@ -11,6 +11,7 @@
 
 namespace Iidestiny\Flysystem\Oss;
 
+use League\Flysystem\AdapterInterface;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 use League\Flysystem\Config;
@@ -271,6 +272,19 @@ class OssAdapter extends AbstractAdapter
     public function createDir($dirname, Config $config)
     {
         return ['path' => $dirname, 'type' => 'dir'];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setVisibility($path, $visibility)
+    {
+        $object = $this->applyPathPrefix($path);
+        $acl = ( $visibility === AdapterInterface::VISIBILITY_PUBLIC ) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
+
+        $this->client->putObjectAcl($this->bucket, $object, $acl);
+
+        return compact('visibility');
     }
 
     /**

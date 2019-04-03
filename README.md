@@ -83,6 +83,7 @@ int $flysystem->getTimestamp('file.md');
 ```php
 use Iidestiny\Flysystem\Oss\Plugins\FileUrl
 use Iidestiny\Flysystem\Oss\Plugins\SignUrl
+use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig
 
 $flysystem->addPlugin(new FileUrl());
 
@@ -93,6 +94,18 @@ $flysystem->addPlugin(new SignUrl());
 
 // Access control sign url
  string $flysystem->signUrl('file.md', $timeout);
+```
+
+## 前端 web 直传配置
+
+oss 直传有三种方式，当前扩展包使用的是最完整的 [服务端签名直传并设置上传回调](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 方式，扩展包只生成前端页面上传所需的签名参数，前端上传实现可参考 [官方文档中的实例](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 或自行搜索
+
+```php
+use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig
+
+$flysystem->addPlugin(new SignatureConfig());
+
+object $flysystem->signatureConfig($prefix, $callBackUrl, $expire);
 ```
 
 ## Integration

@@ -11,6 +11,7 @@
 
 namespace Iidestiny\Flysystem\Oss;
 
+use Iidestiny\Flysystem\Oss\Traits\SignatureTrait;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
@@ -25,7 +26,7 @@ use OSS\OssClient;
  */
 class OssAdapter extends AbstractAdapter
 {
-    use NotSupportingVisibilityTrait;
+    use NotSupportingVisibilityTrait, SignatureTrait;
 
     /**
      * @var
@@ -76,12 +77,12 @@ class OssAdapter extends AbstractAdapter
      */
     public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, ...$params)
     {
-        $this->accessKeyId = $accessKeyId;
+        $this->accessKeyId     = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
-        $this->endpoint = $endpoint;
-        $this->bucket = $bucket;
-        $this->isCName = $isCName;
-        $this->params = $params;
+        $this->endpoint        = $endpoint;
+        $this->bucket          = $bucket;
+        $this->isCName         = $isCName;
+        $this->params          = $params;
         $this->initClient();
     }
 
@@ -95,6 +96,71 @@ class OssAdapter extends AbstractAdapter
         if (empty($this->client)) {
             $this->client = new OssClient($this->accessKeyId, $this->accessKeySecret, $this->endpoint, $this->isCName, ...$this->params);
         }
+    }
+
+    /**
+     * oss 直传配置
+     *
+     * @param string $prefix
+     * @param null   $callBackUrl
+     * @param int    $expire
+     *
+     * @return false|string
+     * @throws \Exception
+     */
+    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30)
+    {
+        if (!empty($prefix)) {
+            $prefix = ltrim($prefix, '/');
+        }
+
+        $callbackParam        = [
+            'callbackUrl'      => $callBackUrl,
+            'callbackBody'     => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
+            'callbackBodyType' => "application/x-www-form-urlencoded",
+        ];
+        $callbackString       = json_encode($callbackParam);
+        $base64_callback_body = base64_encode($callbackString);
+
+        $now        = time();
+        $end        = $now + $expire;
+        $expiration = $this->gmt_iso8601($end);
+
+        // 最大文件大小.用户可以自己设置
+        $condition    = [
+            0 => 'content-length-range',
+            1 => 0,
+            2 => 1048576000,
+        ];
+        $conditions[] = $condition;
+
+        $start        = [
+            0 => 'starts-with',
+            1 => '$key',
+            2 => $prefix,
+        ];
+        $conditions[] = $start;
+
+
+        $arr            = [
+            'expiration' => $expiration,
+            'conditions' => $conditions,
+        ];
+        $policy         = json_encode($arr);
+        $base64_policy  = base64_encode($policy);
+        $string_to_sign = $base64_policy;
+        $signature      = base64_encode(hash_hmac('sha1', $string_to_sign, $this->accessKeySecret, true));
+
+        $response              = [];
+        $response['accessid']  = $this->accessKeyId;
+        $response['host']      = $this->normalizeHost();
+        $response['policy']    = $base64_policy;
+        $response['signature'] = $signature;
+        $response['expire']    = $end;
+        $response['callback']  = $base64_callback_body;
+        $response['dir']       = $prefix;  // 这个参数是设置用户上传文件时指定的前缀。
+
+        return json_encode($response);
     }
 
     /**
@@ -215,7 +281,7 @@ class OssAdapter extends AbstractAdapter
      */
     public function copy($path, $newpath)
     {
-        $path = $this->applyPathPrefix($path);
+        $path    = $this->applyPathPrefix($path);
         $newpath = $this->applyPathPrefix($newpath);
 
         try {
@@ -275,14 +341,23 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * {@inheritdoc}
+     * visibility
+     *
+     * @param string $path
+     * @param string $visibility
+     *
+     * @return array|bool|false
      */
     public function setVisibility($path, $visibility)
     {
         $object = $this->applyPathPrefix($path);
-        $acl = (AdapterInterface::VISIBILITY_PUBLIC === $visibility) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
+        $acl    = (AdapterInterface::VISIBILITY_PUBLIC === $visibility) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
 
-        $this->client->putObjectAcl($this->bucket, $object, $acl);
+        try {
+            $this->client->putObjectAcl($this->bucket, $object, $acl);
+        } catch (OssException $exception) {
+            return false;
+        }
 
         return compact('visibility');
     }
@@ -310,7 +385,7 @@ class OssAdapter extends AbstractAdapter
      */
     public function getUrl($path)
     {
-        return $this->normalizeHost().ltrim($path, '/');
+        return $this->normalizeHost() . ltrim($path, '/');
     }
 
     /**
@@ -448,14 +523,14 @@ class OssAdapter extends AbstractAdapter
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket.'.'.$this->endpoint;
+            $domain = $this->bucket . '.' . $this->endpoint;
         }
 
         if (0 !== stripos($domain, 'https://') && 0 !== stripos($domain, 'http://')) {
             $domain = "http://{$domain}";
         }
 
-        return rtrim($domain, '/').'/';
+        return rtrim($domain, '/') . '/';
     }
 
     /**
@@ -484,18 +559,18 @@ class OssAdapter extends AbstractAdapter
      */
     public function listDirObjects($dirname = '', $recursive = false)
     {
-        $delimiter = '/';
+        $delimiter  = '/';
         $nextMarker = '';
-        $maxkeys = 1000;
+        $maxkeys    = 1000;
 
         $result = [];
 
         while (true) {
             $options = [
                 'delimiter' => $delimiter,
-                'prefix' => $dirname,
-                'max-keys' => $maxkeys,
-                'marker' => $nextMarker,
+                'prefix'    => $dirname,
+                'max-keys'  => $maxkeys,
+                'marker'    => $nextMarker,
             ];
 
             try {
@@ -510,14 +585,14 @@ class OssAdapter extends AbstractAdapter
 
             if (!empty($objectList)) {
                 foreach ($objectList as $objectInfo) {
-                    $object['Prefix'] = $dirname;
-                    $object['Key'] = $objectInfo->getKey();
+                    $object['Prefix']       = $dirname;
+                    $object['Key']          = $objectInfo->getKey();
                     $object['LastModified'] = $objectInfo->getLastModified();
-                    $object['eTag'] = $objectInfo->getETag();
-                    $object['Type'] = $objectInfo->getType();
-                    $object['Size'] = $objectInfo->getSize();
+                    $object['eTag']         = $objectInfo->getETag();
+                    $object['Type']         = $objectInfo->getType();
+                    $object['Size']         = $objectInfo->getSize();
                     $object['StorageClass'] = $objectInfo->getStorageClass();
-                    $result['objects'][] = $object;
+                    $result['objects'][]    = $object;
                 }
             } else {
                 $result['objects'] = [];
@@ -534,7 +609,7 @@ class OssAdapter extends AbstractAdapter
             // Recursive directory
             if ($recursive) {
                 foreach ($result['prefix'] as $prefix) {
-                    $next = $this->listDirObjects($prefix, $recursive);
+                    $next              = $this->listDirObjects($prefix, $recursive);
                     $result['objects'] = array_merge($result['objects'], $next['objects']);
                 }
             }
@@ -565,10 +640,10 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type' => $meta['content-type'],
-            'path' => $filePath,
+            'type'      => $meta['content-type'],
+            'path'      => $filePath,
             'timestamp' => $meta['info']['filetime'],
-            'size' => $meta['content-length'],
+            'size'      => $meta['content-length'],
         ];
     }
 }

@@ -527,7 +527,6 @@ class OssAdapter extends AbstractAdapter
      */
     protected function normalizeHost()
     {
-
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
@@ -544,16 +543,16 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * Check the endpoint to see if SSL can be used
+     * Check the endpoint to see if SSL can be used.
      */
     protected function checkEndpoint()
     {
-        if (strpos($this->endpoint, 'http://') === 0) {
+        if (0 === strpos($this->endpoint, 'http://')) {
             $this->endpoint = substr($this->endpoint, strlen('http://'));
-            $this->useSSL   = false;
-        } elseif (strpos($this->endpoint, 'https://') === 0) {
+            $this->useSSL = false;
+        } elseif (0 === strpos($this->endpoint, 'https://')) {
             $this->endpoint = substr($this->endpoint, strlen('https://'));
-            $this->useSSL   = true;
+            $this->useSSL = true;
         }
     }
 

@@ -32,7 +32,7 @@ use Iidestiny\Flysystem\Oss\Plugins\FileUrl;
 
 $accessKeyId = 'xxxxxx';
 $accessKeySecret = 'xxxxxx';
-$endpoint= 'oss.iidestiny.com';
+$endpoint= 'oss.iidestiny.com'; // ssl：https://iidestiny.com
 $bucket = 'bucket';
 $isCName = true; // 如果 isCname 为 false，endpoint 应配置 oss 提供的域名如：`oss-cn-beijing.aliyuncs.com`，cname 或 cdn 请自行到阿里 oss 后台配置并绑定 bucket
 

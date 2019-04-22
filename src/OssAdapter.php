@@ -64,6 +64,11 @@ class OssAdapter extends AbstractAdapter
     protected $params;
 
     /**
+     * @var bool
+     */
+    protected $useSSL = false;
+
+    /**
      * OssAdapter constructor.
      *
      * @param       $accessKeyId
@@ -84,6 +89,7 @@ class OssAdapter extends AbstractAdapter
         $this->isCName         = $isCName;
         $this->params          = $params;
         $this->initClient();
+        $this->checkEndpoint();
     }
 
     /**
@@ -520,17 +526,34 @@ class OssAdapter extends AbstractAdapter
      */
     protected function normalizeHost()
     {
+
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
             $domain = $this->bucket . '.' . $this->endpoint;
         }
 
-        if (0 !== stripos($domain, 'https://') && 0 !== stripos($domain, 'http://')) {
+        if ($this->useSSL) {
+            $domain = "https://{$domain}";
+        } else {
             $domain = "http://{$domain}";
         }
 
         return rtrim($domain, '/') . '/';
+    }
+
+    /**
+     * Check the endpoint to see if SSL can be used
+     */
+    protected function checkEndpoint()
+    {
+        if (strpos($this->endpoint, 'http://') === 0) {
+            $this->endpoint = substr($this->endpoint, strlen('http://'));
+            $this->useSSL   = false;
+        } elseif (strpos($this->endpoint, 'https://') === 0) {
+            $this->endpoint = substr($this->endpoint, strlen('https://'));
+            $this->useSSL   = true;
+        }
     }
 
     /**

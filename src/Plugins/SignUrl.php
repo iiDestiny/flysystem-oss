@@ -28,13 +28,14 @@ class SignUrl extends AbstractPlugin
     /**
      * handle.
      *
-     * @param $path
-     * @param $timeout
+     * @param       $path
+     * @param       $timeout
+     * @param array $options
      *
      * @return mixed
      */
-    public function handle($path, $timeout)
+    public function handle($path, $timeout, array $options = [])
     {
-        return $this->filesystem->getAdapter()->signUrl($path, $timeout);
+        return $this->filesystem->getAdapter()->signUrl($path, $timeout, $options);
     }
 }

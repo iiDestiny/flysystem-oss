@@ -92,8 +92,8 @@ string $flysystem->getUrl('file.md');
 
 $flysystem->addPlugin(new SignUrl());
 
-// Access control sign url
- string $flysystem->signUrl('file.md', $timeout);
+// Access control sign url & image handle
+ string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
 ```
 
 ## 前端 web 直传配置

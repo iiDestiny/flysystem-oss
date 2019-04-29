@@ -11,6 +11,7 @@
 
 namespace Iidestiny\Flysystem\Oss;
 
+use Carbon\Carbon;
 use Iidestiny\Flysystem\Oss\Traits\SignatureTrait;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Adapter\AbstractAdapter;
@@ -191,6 +192,17 @@ class OssAdapter extends AbstractAdapter
         return $path;
     }
 
+    /**
+     * temporaryUrl
+     *
+     * @param       $path
+     * @param       $expiration
+     * @param array $options
+     */
+    public function getTemporaryUrl($path, $expiration, array $options = [])
+    {
+        $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options);
+    }
     /**
      * write a file.
      *

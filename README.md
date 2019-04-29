@@ -83,6 +83,7 @@ int $flysystem->getTimestamp('file.md');
 ```php
 use Iidestiny\Flysystem\Oss\Plugins\FileUrl
 use Iidestiny\Flysystem\Oss\Plugins\SignUrl
+use Iidestiny\Flysystem\Oss\Plugins\TemporaryUrl
 use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig
 
 $flysystem->addPlugin(new FileUrl());
@@ -94,6 +95,11 @@ $flysystem->addPlugin(new SignUrl());
 
 // Access control sign url & image handle
  string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
+ 
+$flysystem->addPlugin(new TemporaryUrl());
+ 
+// Get oss file temporary url
+string $flysystem->getTemporaryUrl('file.md', $expiration);
 ```
 
 ## 前端 web 直传配置

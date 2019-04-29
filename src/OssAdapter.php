@@ -77,17 +77,19 @@ class OssAdapter extends AbstractAdapter
      * @param       $endpoint
      * @param       $bucket
      * @param bool  $isCName
+     * @param       $prefix
      * @param mixed ...$params
      *
      * @throws OssException
      */
-    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, ...$params)
+    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $prefix = '', ...$params)
     {
         $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
         $this->endpoint = $endpoint;
         $this->bucket = $bucket;
         $this->isCName = $isCName;
+        $this->setPathPrefix($prefix);
         $this->params = $params;
         $this->initClient();
         $this->checkEndpoint();
@@ -123,8 +125,8 @@ class OssAdapter extends AbstractAdapter
         }
 
         $callbackParam = [
-            'callbackUrl' => $callBackUrl,
-            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
+            'callbackUrl'      => $callBackUrl,
+            'callbackBody'     => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
             'callbackBodyType' => 'application/x-www-form-urlencoded',
         ];
         $callbackString = json_encode($callbackParam);
@@ -604,9 +606,9 @@ class OssAdapter extends AbstractAdapter
         while (true) {
             $options = [
                 'delimiter' => $delimiter,
-                'prefix' => $dirname,
-                'max-keys' => $maxkeys,
-                'marker' => $nextMarker,
+                'prefix'    => $dirname,
+                'max-keys'  => $maxkeys,
+                'marker'    => $nextMarker,
             ];
 
             try {
@@ -676,10 +678,10 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type' => $meta['content-type'],
-            'path' => $filePath,
+            'type'      => $meta['content-type'],
+            'path'      => $filePath,
             'timestamp' => $meta['info']['filetime'],
-            'size' => $meta['content-length'],
+            'size'      => $meta['content-length'],
         ];
     }
 }

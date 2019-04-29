@@ -193,7 +193,7 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * temporaryUrl
+     * temporaryUrl.
      *
      * @param       $path
      * @param       $expiration
@@ -203,6 +203,7 @@ class OssAdapter extends AbstractAdapter
     {
         $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options);
     }
+
     /**
      * write a file.
      *

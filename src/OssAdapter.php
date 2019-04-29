@@ -125,8 +125,8 @@ class OssAdapter extends AbstractAdapter
         }
 
         $callbackParam = [
-            'callbackUrl'      => $callBackUrl,
-            'callbackBody'     => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
+            'callbackUrl' => $callBackUrl,
+            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
             'callbackBodyType' => 'application/x-www-form-urlencoded',
         ];
         $callbackString = json_encode($callbackParam);
@@ -606,9 +606,9 @@ class OssAdapter extends AbstractAdapter
         while (true) {
             $options = [
                 'delimiter' => $delimiter,
-                'prefix'    => $dirname,
-                'max-keys'  => $maxkeys,
-                'marker'    => $nextMarker,
+                'prefix' => $dirname,
+                'max-keys' => $maxkeys,
+                'marker' => $nextMarker,
             ];
 
             try {
@@ -678,10 +678,10 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type'      => $meta['content-type'],
-            'path'      => $filePath,
+            'type' => $meta['content-type'],
+            'path' => $filePath,
             'timestamp' => $meta['info']['filetime'],
-            'size'      => $meta['content-length'],
+            'size' => $meta['content-length'],
         ];
     }
 }

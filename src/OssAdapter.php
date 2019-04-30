@@ -203,7 +203,7 @@ class OssAdapter extends AbstractAdapter
      */
     public function getTemporaryUrl($path, $expiration, array $options = [])
     {
-        $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options);
+        return $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options);
     }
 
     /**

@@ -17,65 +17,15 @@ use Mockery;
 
 class OssAdapterTest extends TestCase
 {
-    /**
-     * set up.
-     */
-    public function setUp()
+
+    public function testWriteTest()
     {
-        require_once __DIR__.'/helpers.php';
-    }
-
-    /**
-     * oss provider.
-     *
-     * @return array
-     */
-    public function ossProvider()
-    {
-        $adapter = Mockery::mock(OssAdapter::class, ['accessKeyId', 'accessKeySecret', 'endpoint', 'bucket'])
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods();
-
-        $OssClient = Mockery::mock('stdClass');
-
-        $adapter->allows([
-            'OssClient' => $OssClient,
-        ]);
-
-        return [
-            [$adapter, compact('OssClient')],
-        ];
-    }
-
-    /**
-     * @dataProvider ossProvider
-     */
-    public function testWriteTest($adapter, $managers)
-    {
-        /*$managers['OssClient']->expects()->putObject('bucket', 'foo/bar.md', 'content', [])
-            ->andReturns(['response', false], ['response', true])
-            ->twice();
-
-        $adapter->shouldReceive('write')
-            ->set('client', $managers['OssClient']);
-
-        $this->assertTrue($adapter->write('foo/bar.md', 'content', new Config()));
-        $this->assertTrue($adapter->write('foo/bar.md', 'content', new Config()));*/
         $this->assertTrue(true);
     }
 
-    /**
-     * @dataProvider ossProvider
-     */
-    public function testWriteStreamTest($adapter, $managers)
+
+    public function testWriteStreamTest()
     {
-        /*$adapter->expects()->write('foo.md', '', Mockery::type(Config::class))
-            ->andReturns(true, false)
-            ->twice();
-
-        $result = $adapter->writeStream('foo.md', tmpfile(), new Config());
-
-        $this->assertTrue($result);*/
         $this->assertTrue(true);
     }
 }

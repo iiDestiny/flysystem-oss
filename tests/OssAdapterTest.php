@@ -11,18 +11,14 @@
 
 namespace Iidestiny\Flysystem\Oss;
 
-use League\Flysystem\Config;
 use PHPUnit\Framework\TestCase;
-use Mockery;
 
 class OssAdapterTest extends TestCase
 {
-
     public function testWriteTest()
     {
         $this->assertTrue(true);
     }
-
 
     public function testWriteStreamTest()
     {

@@ -31,7 +31,7 @@ use League\Flysystem\Filesystem;
 use Iidestiny\Flysystem\Oss\OssAdapter;
 use Iidestiny\Flysystem\Oss\Plugins\FileUrl;
 
-$root = '';
+$root = ''; // 资源默认根路径，此参数可有可无
 $accessKeyId = 'xxxxxx';
 $accessKeySecret = 'xxxxxx';
 $endpoint= 'oss.iidestiny.com'; // ssl：https://iidestiny.com

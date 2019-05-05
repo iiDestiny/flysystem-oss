@@ -11,19 +11,21 @@
 <a href="https://scrutinizer-ci.com/g/iiDestiny/flysystem-oss/?branch=master"><img src="https://scrutinizer-ci.com/g/iiDestiny/flysystem-oss/badges/quality-score.png?b=master"></a>
 <a href="https://github.com/iiDestiny/dependency-injection"><img src="https://badges.frapsoft.com/os/v1/open-source.svg?v=103"></a>
 <a href="https://github.com/iiDestiny/flysystem-oss"><img src="https://poser.pugx.org/iidestiny/flysystem-oss/license"></a>
+<a href="https://996.icu"><img src="https://img.shields.io/badge/link-996.icu-red.svg" alt="996.icu" /></a>
+<a href="https://996.icu"><img src="https://img.shields.io/badge/license-Anti%20996-blue.svg" alt="996.icu" /></a>
 </p>
 
-## Requirement
+## 扩展包要求
 
 -   PHP >= 7.0
 
-## Installation
+## 安装命令
 
 ```shell
 $ composer require "iidestiny/flysystem-oss" -vvv
 ```
 
-## Usage
+## 使用
 
 ```php
 use League\Flysystem\Filesystem;
@@ -43,7 +45,7 @@ $flysystem = new Filesystem($adapter);
 
 ```
 
-## API
+## 常用方法
 
 ```php
 bool $flysystem->write('file.md', 'contents');
@@ -79,27 +81,27 @@ string $flysystem->getMimetype('file.md');
 int $flysystem->getTimestamp('file.md');
 ```
 
-## Plugins
+## 插件扩展
 
 ```php
-use Iidestiny\Flysystem\Oss\Plugins\FileUrl
-use Iidestiny\Flysystem\Oss\Plugins\SignUrl
-use Iidestiny\Flysystem\Oss\Plugins\TemporaryUrl
-use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig
+use Iidestiny\Flysystem\Oss\Plugins\FileUrl;
+use Iidestiny\Flysystem\Oss\Plugins\SignUrl;
+use Iidestiny\Flysystem\Oss\Plugins\TemporaryUrl;
+use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig;
 
+// 获取 oss 资源访问链接
 $flysystem->addPlugin(new FileUrl());
 
-// Get oss file visit url
 string $flysystem->getUrl('file.md');
 
+// url 访问有效期 & 图片处理「$timeout 为多少秒过期」
 $flysystem->addPlugin(new SignUrl());
 
-// Access control sign url & image handle
  string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
- 
+
+ // url 访问有效期「$expiration 为未来时间 2019-05-05 17:50:32」
 $flysystem->addPlugin(new TemporaryUrl());
- 
-// Get oss file temporary url
+
 string $flysystem->getTemporaryUrl('file.md', $expiration);
 ```
 
@@ -115,11 +117,11 @@ $flysystem->addPlugin(new SignatureConfig());
 object $flysystem->signatureConfig($prefix, $callBackUrl, $expire);
 ```
 
-## Integration
+## Laravel 适配包
 
 -   Laravel 5：[iidestiny/laravel-filesystem-oss](https://github.com/iiDestiny/laravel-filesystem-oss)
 
-## reference
+## 参考
 
 -   [overtrue/flysystem-qiniu](https://github.com/overtrue/flysystem-qiniu)
 

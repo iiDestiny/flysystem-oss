@@ -27,7 +27,8 @@ use OSS\OssClient;
  */
 class OssAdapter extends AbstractAdapter
 {
-    use NotSupportingVisibilityTrait, SignatureTrait;
+    use NotSupportingVisibilityTrait;
+    use SignatureTrait;
 
     /**
      * @var
@@ -676,7 +677,7 @@ class OssAdapter extends AbstractAdapter
         return [
             'type' => 'file',
             'mimetype' => $meta['content-type'],
-            'path'      => $filePath,
+            'path' => $filePath,
             'timestamp' => $meta['info']['filetime'],
             'size' => $meta['content-length'],
         ];

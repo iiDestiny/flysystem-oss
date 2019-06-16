@@ -512,15 +512,11 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string $path
      *
-     * @return array|bool|false
+     * @return array|false
      */
     public function getMimetype($path)
     {
-        if (!$fileInfo = $this->normalizeFileInfo(['Key' => $path])) {
-            return false;
-        }
-
-        return ['mimetype' => $fileInfo['type']];
+        return $this->normalizeFileInfo(['Key' => $path]);
     }
 
     /**
@@ -678,7 +674,8 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type'      => $meta['content-type'],
+            'type' => 'file',
+            'mimetype' => $meta['content-type'],
             'path'      => $filePath,
             'timestamp' => $meta['info']['filetime'],
             'size'      => $meta['content-length'],

@@ -114,12 +114,13 @@ class OssAdapter extends AbstractAdapter
      * @param string $prefix
      * @param null   $callBackUrl
      * @param int    $expire
+     * @param int    $contentLengthRangeValue 最大文件大小
      *
      * @return false|string
      *
      * @throws \Exception
      */
-    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30)
+    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30,  $contentLengthRangeValue = 1048576000)
     {
         if (!empty($prefix)) {
             $prefix = ltrim($prefix, '/');
@@ -141,7 +142,7 @@ class OssAdapter extends AbstractAdapter
         $condition = [
             0 => 'content-length-range',
             1 => 0,
-            2 => 1048576000,
+            2 => $contentLengthRangeValue,
         ];
         $conditions[] = $condition;
 

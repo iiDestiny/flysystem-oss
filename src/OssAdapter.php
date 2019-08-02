@@ -120,7 +120,7 @@ class OssAdapter extends AbstractAdapter
      *
      * @throws \Exception
      */
-    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30,  $contentLengthRangeValue = 1048576000)
+    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30, $contentLengthRangeValue = 1048576000)
     {
         if (!empty($prefix)) {
             $prefix = ltrim($prefix, '/');

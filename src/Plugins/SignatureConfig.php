@@ -31,11 +31,12 @@ class SignatureConfig extends AbstractPlugin
      * @param string $prefix
      * @param null   $callBackUrl
      * @param int    $expire
+     * @param int    $contentLengthRangeValue
      *
      * @return mixed
      */
-    public function handle($prefix = '', $callBackUrl = null, $expire = 30)
+    public function handle($prefix = '', $callBackUrl = null, $expire = 30, $contentLengthRangeValue = 1048576000)
     {
-        return $this->filesystem->getAdapter()->signatureConfig($prefix, $callBackUrl, $expire);
+        return $this->filesystem->getAdapter()->signatureConfig($prefix, $callBackUrl, $expire, $contentLengthRangeValue);
     }
 }

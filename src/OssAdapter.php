@@ -407,6 +407,8 @@ class OssAdapter extends AbstractAdapter
      */
     public function getUrl($path)
     {
+        $path = $this->applyPathPrefix($path);
+
         return $this->normalizeHost().ltrim($path, '/');
     }
 

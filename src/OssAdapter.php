@@ -27,7 +27,8 @@ use OSS\OssClient;
  */
 class OssAdapter extends AbstractAdapter
 {
-    use NotSupportingVisibilityTrait, SignatureTrait;
+    use NotSupportingVisibilityTrait;
+    use SignatureTrait;
 
     /**
      * @var
@@ -113,12 +114,13 @@ class OssAdapter extends AbstractAdapter
      * @param string $prefix
      * @param null   $callBackUrl
      * @param int    $expire
+     * @param int    $contentLengthRangeValue 最大文件大小
      *
      * @return false|string
      *
      * @throws \Exception
      */
-    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30)
+    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30, $contentLengthRangeValue = 1048576000)
     {
         if (!empty($prefix)) {
             $prefix = ltrim($prefix, '/');
@@ -140,7 +142,7 @@ class OssAdapter extends AbstractAdapter
         $condition = [
             0 => 'content-length-range',
             1 => 0,
-            2 => 1048576000,
+            2 => $contentLengthRangeValue,
         ];
         $conditions[] = $condition;
 
@@ -514,15 +516,11 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string $path
      *
-     * @return array|bool|false
+     * @return array|false
      */
     public function getMimetype($path)
     {
-        if (!$fileInfo = $this->normalizeFileInfo(['Key' => $path])) {
-            return false;
-        }
-
-        return ['mimetype' => $fileInfo['type']];
+        return $this->normalizeFileInfo(['Key' => $path]);
     }
 
     /**
@@ -680,7 +678,8 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type' => $meta['content-type'],
+            'type' => 'file',
+            'mimetype' => $meta['content-type'],
             'path' => $filePath,
             'timestamp' => $meta['info']['filetime'],
             'size' => $meta['content-length'],

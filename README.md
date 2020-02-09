@@ -76,6 +76,11 @@ string $flysystem->getAdapter()->getUrl('file.md');
 string $flysystem->getMimetype('file.md');
 
 int $flysystem->getTimestamp('file.md');
+
+bool $flysystem->createDir('files/');//此方法会在新目录下创建一个default.txt的默认文件，当目录下有其他文件时，可删除此文件
+
+bool $flysystem->deleteDir('files/');//此方法将删除目录及子目录下的所有文件，谨慎使用
+
 ```
 
 ## Plugins

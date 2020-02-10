@@ -348,7 +348,11 @@ class OssAdapter extends AbstractAdapter
      */
     public function deleteDir($dirname)
     {
-        return true;
+        $fileList = $this->listContents($dirname,true);
+        foreach($fileList as $file){
+            $this->delete($file['path']);
+        }
+        return !$this->has($dirname);
     }
 
     /**
@@ -357,11 +361,14 @@ class OssAdapter extends AbstractAdapter
      * @param string $dirname
      * @param Config $config
      *
-     * @return array|false
+     * @return bool
      */
     public function createDir($dirname, Config $config)
     {
-        return ['path' => $dirname, 'type' => 'dir'];
+        $defaultFile = trim($dirname, '/') . '/oss.txt';
+
+        return $this->write($defaultFile, '当虚拟目录下有其他文件时，可删除此文件~', $config);
+
     }
 
     /**

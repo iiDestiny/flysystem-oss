@@ -59,6 +59,7 @@ class OssAdapter extends AbstractAdapter
      * @var array
      */
     protected $buckets;
+
     /**
      * @var OssClient
      */
@@ -103,12 +104,12 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * 调用不同的桶配置
+     * 调用不同的桶配置.
      */
     public function bucket($bucket)
     {
         if (!isset($this->buckets[$bucket])) {
-            throw new \Exception("bucket is not exist.");
+            throw new \Exception('bucket is not exist.');
         }
         $bucketConfig = $this->buckets[$bucket];
 

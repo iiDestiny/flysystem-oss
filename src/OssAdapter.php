@@ -11,6 +11,8 @@
 
 namespace Iidestiny\Flysystem\Oss;
 
+use Carbon\Carbon;
+use Iidestiny\Flysystem\Oss\Traits\SignatureTrait;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
@@ -26,6 +28,7 @@ use OSS\OssClient;
 class OssAdapter extends AbstractAdapter
 {
     use NotSupportingVisibilityTrait;
+    use SignatureTrait;
 
     /**
      * @var
@@ -63,6 +66,11 @@ class OssAdapter extends AbstractAdapter
     protected $params;
 
     /**
+     * @var bool
+     */
+    protected $useSSL = false;
+
+    /**
      * OssAdapter constructor.
      *
      * @param       $accessKeyId
@@ -70,19 +78,22 @@ class OssAdapter extends AbstractAdapter
      * @param       $endpoint
      * @param       $bucket
      * @param bool  $isCName
+     * @param       $prefix
      * @param mixed ...$params
      *
      * @throws OssException
      */
-    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, ...$params)
+    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $prefix = '', ...$params)
     {
         $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
         $this->endpoint = $endpoint;
         $this->bucket = $bucket;
         $this->isCName = $isCName;
+        $this->setPathPrefix($prefix);
         $this->params = $params;
         $this->initClient();
+        $this->checkEndpoint();
     }
 
     /**
@@ -98,24 +109,103 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
+     * oss 直传配置.
+     *
+     * @param string $prefix
+     * @param null   $callBackUrl
+     * @param int    $expire
+     * @param int    $contentLengthRangeValue 最大文件大小
+     *
+     * @return false|string
+     *
+     * @throws \Exception
+     */
+    public function signatureConfig($prefix = '', $callBackUrl = null, $expire = 30, $contentLengthRangeValue = 1048576000)
+    {
+        if (!empty($prefix)) {
+            $prefix = ltrim($prefix, '/');
+        }
+
+        $callbackParam = [
+            'callbackUrl' => $callBackUrl,
+            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
+            'callbackBodyType' => 'application/x-www-form-urlencoded',
+        ];
+        $callbackString = json_encode($callbackParam);
+        $base64_callback_body = base64_encode($callbackString);
+
+        $now = time();
+        $end = $now + $expire;
+        $expiration = $this->gmt_iso8601($end);
+
+        // 最大文件大小.用户可以自己设置
+        $condition = [
+            0 => 'content-length-range',
+            1 => 0,
+            2 => $contentLengthRangeValue,
+        ];
+        $conditions[] = $condition;
+
+        $start = [
+            0 => 'starts-with',
+            1 => '$key',
+            2 => $prefix,
+        ];
+        $conditions[] = $start;
+
+        $arr = [
+            'expiration' => $expiration,
+            'conditions' => $conditions,
+        ];
+        $policy = json_encode($arr);
+        $base64_policy = base64_encode($policy);
+        $string_to_sign = $base64_policy;
+        $signature = base64_encode(hash_hmac('sha1', $string_to_sign, $this->accessKeySecret, true));
+
+        $response = [];
+        $response['accessid'] = $this->accessKeyId;
+        $response['host'] = $this->normalizeHost();
+        $response['policy'] = $base64_policy;
+        $response['signature'] = $signature;
+        $response['expire'] = $end;
+        $response['callback'] = $base64_callback_body;
+        $response['dir'] = $prefix;  // 这个参数是设置用户上传文件时指定的前缀。
+
+        return json_encode($response);
+    }
+
+    /**
      * sign url.
      *
-     * @param $path
-     * @param $timeout
+     * @param       $path
+     * @param       $timeout
+     * @param array $options
      *
      * @return bool|string
      */
-    public function signUrl($path, $timeout)
+    public function signUrl($path, $timeout, array $options = [])
     {
         $path = $this->applyPathPrefix($path);
 
         try {
-            $path = $this->client->signUrl($this->bucket, $path, $timeout);
+            $path = $this->client->signUrl($this->bucket, $path, $timeout, OssClient::OSS_HTTP_GET, $options);
         } catch (OssException $exception) {
             return false;
         }
 
         return $path;
+    }
+
+    /**
+     * temporaryUrl.
+     *
+     * @param       $path
+     * @param       $expiration
+     * @param array $options
+     */
+    public function getTemporaryUrl($path, $expiration, array $options = [])
+    {
+        return $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options);
     }
 
     /**
@@ -258,10 +348,11 @@ class OssAdapter extends AbstractAdapter
      */
     public function deleteDir($dirname)
     {
-        $fileList = $this->listContents($dirname,true);
-        foreach($fileList as $file){
+        $fileList = $this->listContents($dirname, true);
+        foreach ($fileList as $file) {
             $this->delete($file['path']);
         }
+
         return !$this->has($dirname);
     }
 
@@ -275,21 +366,29 @@ class OssAdapter extends AbstractAdapter
      */
     public function createDir($dirname, Config $config)
     {
-        $defaultFile = trim($dirname, '/') . '/oss.txt';
+        $defaultFile = trim($dirname, '/').'/oss.txt';
 
         return $this->write($defaultFile, '当虚拟目录下有其他文件时，可删除此文件~', $config);
-
     }
 
     /**
-     * {@inheritdoc}
+     * visibility.
+     *
+     * @param string $path
+     * @param string $visibility
+     *
+     * @return array|bool|false
      */
     public function setVisibility($path, $visibility)
     {
         $object = $this->applyPathPrefix($path);
-        $acl = ( $visibility === AdapterInterface::VISIBILITY_PUBLIC ) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
+        $acl = (AdapterInterface::VISIBILITY_PUBLIC === $visibility) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
 
-        $this->client->putObjectAcl($this->bucket, $object, $acl);
+        try {
+            $this->client->putObjectAcl($this->bucket, $object, $acl);
+        } catch (OssException $exception) {
+            return false;
+        }
 
         return compact('visibility');
     }
@@ -317,6 +416,8 @@ class OssAdapter extends AbstractAdapter
      */
     public function getUrl($path)
     {
+        $path = $this->applyPathPrefix($path);
+
         return $this->normalizeHost().ltrim($path, '/');
     }
 
@@ -422,15 +523,11 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string $path
      *
-     * @return array|bool|false
+     * @return array|false
      */
     public function getMimetype($path)
     {
-        if (!$fileInfo = $this->normalizeFileInfo(['Key' => $path])) {
-            return false;
-        }
-
-        return ['mimetype' => $fileInfo['type']];
+        return $this->normalizeFileInfo(['Key' => $path]);
     }
 
     /**
@@ -458,11 +555,27 @@ class OssAdapter extends AbstractAdapter
             $domain = $this->bucket.'.'.$this->endpoint;
         }
 
-        if (0 !== stripos($domain, 'https://') && 0 !== stripos($domain, 'http://')) {
+        if ($this->useSSL) {
+            $domain = "https://{$domain}";
+        } else {
             $domain = "http://{$domain}";
         }
 
         return rtrim($domain, '/').'/';
+    }
+
+    /**
+     * Check the endpoint to see if SSL can be used.
+     */
+    protected function checkEndpoint()
+    {
+        if (0 === strpos($this->endpoint, 'http://')) {
+            $this->endpoint = substr($this->endpoint, strlen('http://'));
+            $this->useSSL = false;
+        } elseif (0 === strpos($this->endpoint, 'https://')) {
+            $this->endpoint = substr($this->endpoint, strlen('https://'));
+            $this->useSSL = true;
+        }
     }
 
     /**
@@ -572,7 +685,8 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type' => $meta['content-type'],
+            'type' => 'file',
+            'mimetype' => $meta['content-type'],
             'path' => $filePath,
             'timestamp' => $meta['info']['filetime'],
             'size' => $meta['content-length'],

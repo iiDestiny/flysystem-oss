@@ -13,7 +13,7 @@ namespace Iidestiny\Flysystem\Oss\Plugins;
 
 use League\Flysystem\Plugin\AbstractPlugin;
 
-class SignUrl extends AbstractPlugin
+class SignatureConfig extends AbstractPlugin
 {
     /**
      * sign url.
@@ -22,20 +22,21 @@ class SignUrl extends AbstractPlugin
      */
     public function getMethod()
     {
-        return 'signUrl';
+        return 'signatureConfig';
     }
 
     /**
      * handle.
      *
-     * @param       $path
-     * @param       $timeout
-     * @param array $options
+     * @param string $prefix
+     * @param null   $callBackUrl
+     * @param int    $expire
+     * @param int    $contentLengthRangeValue
      *
      * @return mixed
      */
-    public function handle($path, $timeout, array $options = [])
+    public function handle($prefix = '', $callBackUrl = null, $expire = 30, $contentLengthRangeValue = 1048576000)
     {
-        return $this->filesystem->getAdapter()->signUrl($path, $timeout, $options);
+        return $this->filesystem->getAdapter()->signatureConfig($prefix, $callBackUrl, $expire, $contentLengthRangeValue);
     }
 }

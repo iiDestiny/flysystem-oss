@@ -13,29 +13,29 @@ namespace Iidestiny\Flysystem\Oss\Plugins;
 
 use League\Flysystem\Plugin\AbstractPlugin;
 
-class SignUrl extends AbstractPlugin
+class TemporaryUrl extends AbstractPlugin
 {
     /**
-     * sign url.
+     * getTemporaryUrl.
      *
      * @return string
      */
     public function getMethod()
     {
-        return 'signUrl';
+        return 'getTemporaryUrl';
     }
 
     /**
      * handle.
      *
      * @param       $path
-     * @param       $timeout
+     * @param       $expiration
      * @param array $options
      *
      * @return mixed
      */
-    public function handle($path, $timeout, array $options = [])
+    public function handle($path, $expiration, array $options = [])
     {
-        return $this->filesystem->getAdapter()->signUrl($path, $timeout, $options);
+        return $this->filesystem->getAdapter()->getTemporaryUrl($path, $expiration, $options);
     }
 }

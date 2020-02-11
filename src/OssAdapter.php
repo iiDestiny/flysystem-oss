@@ -56,6 +56,10 @@ class OssAdapter extends AbstractAdapter
     protected $isCName;
 
     /**
+     * @var array
+     */
+    protected $buckets;
+    /**
      * @var OssClient
      */
     protected $client;
@@ -79,11 +83,12 @@ class OssAdapter extends AbstractAdapter
      * @param       $bucket
      * @param bool  $isCName
      * @param       $prefix
+     * @param array $buckets
      * @param mixed ...$params
      *
      * @throws OssException
      */
-    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $prefix = '', ...$params)
+    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $prefix = '', $buckets = [], ...$params)
     {
         $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
@@ -91,9 +96,32 @@ class OssAdapter extends AbstractAdapter
         $this->bucket = $bucket;
         $this->isCName = $isCName;
         $this->setPathPrefix($prefix);
+        $this->buckets = $buckets;
         $this->params = $params;
         $this->initClient();
         $this->checkEndpoint();
+    }
+
+    /**
+     * 调用不同的桶配置
+     */
+    public function bucket($bucket)
+    {
+        if (!isset($this->buckets[$bucket])) {
+            throw new \Exception("bucket is not exist.");
+        }
+        $bucketConfig = $this->buckets[$bucket];
+
+        $this->accessKeyId = $bucketConfig['access_key'];
+        $this->accessKeySecret = $bucketConfig['secret_key'];
+        $this->endpoint = $bucketConfig['endpoint'];
+        $this->bucket = $bucketConfig['bucket'];
+        $this->isCName = $bucketConfig['isCName'];
+
+        $this->initClient();
+        $this->checkEndpoint();
+
+        return $this;
     }
 
     /**

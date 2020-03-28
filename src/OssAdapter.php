@@ -105,6 +105,11 @@ class OssAdapter extends AbstractAdapter
 
     /**
      * 调用不同的桶配置.
+     *
+     * @param $bucket
+     *
+     * @return $this
+     * @throws OssException
      */
     public function bucket($bucket)
     {
@@ -386,6 +391,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $dirname
      *
      * @return bool
+     * @throws OssException
      */
     public function deleteDir($dirname)
     {

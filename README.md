@@ -87,6 +87,7 @@ use Iidestiny\Flysystem\Oss\Plugins\FileUrl;
 use Iidestiny\Flysystem\Oss\Plugins\SignUrl;
 use Iidestiny\Flysystem\Oss\Plugins\TemporaryUrl;
 use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig;
+use Iidestiny\Flysystem\Oss\Plugins\SetBucket;
 
 // 获取 oss 资源访问链接
 $flysystem->addPlugin(new FileUrl());
@@ -103,14 +104,38 @@ $flysystem->addPlugin(new TemporaryUrl());
 
 string $flysystem->getTemporaryUrl('file.md', $expiration);
 
-//多个bucket切换
+// 多个bucket切换
 $flysystem->addPlugin(new SetBucket());
 $flysystem->bucket('test')->has('file.md');
 ```
 
+## 获取官方完整 OSS 处理能力
+
+阿里官方 SDK 可能处理了更多的事情，如果你想获取完整的功能可通过此插件获取，
+然后你将拥有完整的 oss 处理能力
+
+```php
+use Iidestiny\Flysystem\Oss\Plugins\Kernel;
+
+$flysystem->addPlugin(new Kernel());
+$kernel = $flysystem->kernel()
+
+// 例如：防盗链功能
+$refererConfig = new RefererConfig();
+// 设置允许空Referer。
+$refererConfig->setAllowEmptyReferer(true);
+// 添加Referer白名单。Referer参数支持通配符星号（*）和问号（？）。
+$refererConfig->addReferer("www.aliiyun.com");
+$refererConfig->addReferer("www.aliiyuncs.com");
+
+$kernel->putBucketReferer($bucket, $refererConfig)
+```
+
+> 更多功能请查看官方 SDK 手册：https://help.aliyun.com/document_detail/32100.html?spm=a2c4g.11186623.6.1055.66b64a49hkcTHv
+
 ## 前端 web 直传配置
 
-oss 直传有三种方式，当前扩展包使用的是最完整的 [服务端签名直传并设置上传回调](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 方式，扩展包只生成前端页面上传所需的签名参数，前端上传实现可参考 [官方文档中的实例](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 或自行搜索
+oss 直传有三种方式，当前扩展包使用的是最完整的 [服务端签名直传并设置上传回调](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 方式，**扩展包只生成前端页面上传所需的签名参数**，前端上传实现可参考 [官方文档中的实例](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 或自行搜索
 
 ```php
 use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig

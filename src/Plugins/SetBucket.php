@@ -28,9 +28,7 @@ class SetBucket extends AbstractPlugin
     /**
      * handle.
      *
-     * @param       $path
-     * @param       $timeout
-     * @param array $options
+     * @param $bucket
      *
      * @return mixed
      */

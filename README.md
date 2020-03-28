@@ -86,7 +86,6 @@ int $flysystem->getTimestamp('file.md');
 use Iidestiny\Flysystem\Oss\Plugins\FileUrl;
 use Iidestiny\Flysystem\Oss\Plugins\SignUrl;
 use Iidestiny\Flysystem\Oss\Plugins\TemporaryUrl;
-use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig;
 use Iidestiny\Flysystem\Oss\Plugins\SetBucket;
 
 // 获取 oss 资源访问链接
@@ -118,7 +117,7 @@ $flysystem->bucket('test')->has('file.md');
 use Iidestiny\Flysystem\Oss\Plugins\Kernel;
 
 $flysystem->addPlugin(new Kernel());
-$kernel = $flysystem->kernel()
+$kernel = $flysystem->kernel();
 
 // 例如：防盗链功能
 $refererConfig = new RefererConfig();
@@ -128,7 +127,7 @@ $refererConfig->setAllowEmptyReferer(true);
 $refererConfig->addReferer("www.aliiyun.com");
 $refererConfig->addReferer("www.aliiyuncs.com");
 
-$kernel->putBucketReferer($bucket, $refererConfig)
+$kernel->putBucketReferer($bucket, $refererConfig);
 ```
 
 > 更多功能请查看官方 SDK 手册：https://help.aliyun.com/document_detail/32100.html?spm=a2c4g.11186623.6.1055.66b64a49hkcTHv
@@ -138,11 +137,40 @@ $kernel->putBucketReferer($bucket, $refererConfig)
 oss 直传有三种方式，当前扩展包使用的是最完整的 [服务端签名直传并设置上传回调](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 方式，**扩展包只生成前端页面上传所需的签名参数**，前端上传实现可参考 [官方文档中的实例](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 或自行搜索
 
 ```php
-use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig
+use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig;
 
 $flysystem->addPlugin(new SignatureConfig());
 
-object $flysystem->signatureConfig($prefix, $callBackUrl, $expire);
+/**
+ * 1. 前缀如：'images/'
+ * 2. 回调服务器 url
+ * 3. 回调自定义参数
+ * 4. 回调链接过期时间，防止第三方拿到回调请求恶意发送
+ */
+object $flysystem->signatureConfig($prefix = '/', $callBackUrl = '', $customData = [], $expire = 30);
+```
+
+## 直传回调验签
+
+当设置了直传回调后，可以通过验签插件，验证并获取 oss 传回的数据 [文档](https://help.aliyun.com/document_detail/91771.html?spm=a2c4g.11186623.2.15.7ee07eaeexR7Y1#title-9t0-sge-pfr)
+
+注意事项：
+- 如果没有 Authorization 头信息导致验签失败需要先在 apache 或者 nginx 中设置 rewrite
+- 以 apache 为例，修改 httpd.conf 在 DirectoryIndex index.php 这行下面增加「RewriteEngine On」「RewriteRule .* - [env=HTTP_AUTHORIZATION:%{HTTP:Authorization},last]」
+
+```php
+use Iidestiny\Flysystem\Oss\Plugins\Verify;
+
+$flysystem->addPlugin(new Verify());
+
+try {
+    // 验签处理
+    $data = $flysystem->verify();
+    // 回调通知数据
+    Log::debug('data：', [$data]);
+} catch (Exception $e) {
+    // ...
+}
 ```
 
 ## 前端直传组件分享「vue + element」

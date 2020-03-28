@@ -147,7 +147,7 @@ object $flysystem->signatureConfig($prefix, $callBackUrl, $expire);
 
 ## 前端直传组件分享「vue + element」
 
-```h5
+```html
 <template>
   <div>
     <el-upload

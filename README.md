@@ -163,15 +163,33 @@ use Iidestiny\Flysystem\Oss\Plugins\Verify;
 
 $flysystem->addPlugin(new Verify());
 
-try {
-    // 验签处理
-    $data = $flysystem->verify();
-    // 回调通知数据
-    Log::debug('data：', [$data]);
-} catch (Exception $e) {
-    // ...
+list($verify, $data) = $flysystem->verify();
+// [$verify, $data] = $flysystem->verify(); // php 7.1 +
+
+if (!$verify) {
+    // 验证失败处理，此时 $data 为验签失败提示信息
+}
+
+// 注意一定要返回 json 格式的字符串，因为 oss 服务器只接收 json 格式，否则给前端报 CallbackFailed
+header("Content-Type: application/json");
+echo  json_encode($data);
+```
+
+直传回调验收后返回给前端的数据，例如
+
+```json
+{
+    "filename": "user/15854050909488182.png",
+    "size": "56039",
+    "mimeType": "image/png",
+    "height": "473",
+    "width": "470",
+    "name": "zhangsan", // 下面这两条是请求直传配置时自定义参数
+    "age": "24"
 }
 ```
+
+> 这其实要看你回调通知方法具体怎么返回，如果直接按照文档给的方法返回是这个样子
 
 ## 前端直传组件分享「vue + element」
 
@@ -229,6 +247,14 @@ export default {
         const response = await getOssPolicy()
 
         this.uploadUrl = response.host
+
+        // 组装自定义参数
+        if (Object.keys(response['callback-var']).length) {
+          for (const [key, value] of Object.entries(response['callback-var'])) {
+            this.data[key] = value
+          }
+        }
+
         this.data.policy = response.policy
         this.data.OSSAccessKeyId = response.accessid
         this.data.signature = response.signature

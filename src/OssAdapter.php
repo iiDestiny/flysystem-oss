@@ -188,7 +188,6 @@ class OssAdapter extends AbstractAdapter
         ];
         $callbackString     = json_encode($callbackParam);
         $base64CallbackBody = base64_encode($callbackString);
-        $base64CallbackVar  = base64_encode(json_encode($callbackVar));
 
         $now        = time();
         $end        = $now + $expire;
@@ -225,7 +224,7 @@ class OssAdapter extends AbstractAdapter
         $response['signature']    = $signature;
         $response['expire']       = $end;
         $response['callback']     = $base64CallbackBody;
-        $response['callback-var'] = $base64CallbackVar;
+        $response['callback-var'] = $callbackVar;
         $response['dir']          = $prefix;  // 这个参数是设置用户上传文件时指定的前缀。
 
         return json_encode($response);

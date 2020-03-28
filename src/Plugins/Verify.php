@@ -16,8 +16,7 @@ class Verify extends AbstractPlugin
     /**
      * 验签
      *
-     * @return false|string
-     * @throws Exception
+     * @return array
      */
     public function handle()
     {
@@ -35,7 +34,7 @@ class Verify extends AbstractPlugin
 
         // 验证失败
         if ($authorizationBase64 == '' || $pubKeyUrlBase64 == '') {
-            throw new Exception('403 Forbidden', 403);
+            return [false, ['CallbackFailed' => 'authorization or pubKeyUrl is null']];
         }
 
         // 获取OSS的签名
@@ -50,7 +49,7 @@ class Verify extends AbstractPlugin
         $pubKey = curl_exec($ch);
 
         if ($pubKey == "") {
-            throw new Exception('403 Forbidden', 403);
+            return [false, ['CallbackFailed' => 'curl is fail']];
         }
 
         // 获取回调 body
@@ -67,11 +66,11 @@ class Verify extends AbstractPlugin
         $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
 
         if ($ok !== 1) {
-            throw new Exception('403 Forbidden', 403);
+            return [false, ['CallbackFailed' => 'verify is fail, Illegal data']];
         }
-        header("Content-Type: application/json");
-        $data = ["Status" => "Ok"];
 
-        return json_encode($data);
+        parse_str($body, $data);
+
+        return [true, $data];
     }
 }

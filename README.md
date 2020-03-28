@@ -144,8 +144,8 @@ $flysystem->addPlugin(new SignatureConfig());
 /**
  * 1. 前缀如：'images/'
  * 2. 回调服务器 url
- * 3. 回调自定义参数
- * 4. 回调链接过期时间，防止第三方拿到回调请求恶意发送
+ * 3. 回调自定义参数，oss 回传应用服务器时会带上
+ * 4. 当前直传配置链接有效期
  */
 object $flysystem->signatureConfig($prefix = '/', $callBackUrl = '', $customData = [], $expire = 30);
 ```
@@ -175,7 +175,7 @@ header("Content-Type: application/json");
 echo  json_encode($data);
 ```
 
-直传回调验收后返回给前端的数据，例如
+直传回调验签后返回给前端的数据「包括自定义参数」，例如
 
 ```json
 {
@@ -184,8 +184,8 @@ echo  json_encode($data);
     "mimeType": "image/png",
     "height": "473",
     "width": "470",
-    "name": "zhangsan", // 下面这两条是请求直传配置时自定义参数
-    "age": "24"
+    "custom_name": "zhangsan",
+    "custom_age": "24"
 }
 ```
 

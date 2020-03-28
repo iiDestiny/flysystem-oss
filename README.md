@@ -102,6 +102,10 @@ $flysystem->addPlugin(new SignUrl());
 $flysystem->addPlugin(new TemporaryUrl());
 
 string $flysystem->getTemporaryUrl('file.md', $expiration);
+
+//多个bucket切换
+$flysystem->addPlugin(new SetBucket());
+$flysystem->bucket('test')->has('file.md');
 ```
 
 ## 前端 web 直传配置

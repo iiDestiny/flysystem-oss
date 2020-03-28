@@ -1,10 +1,17 @@
 <?php
 
+/*
+ * This file is part of the iidestiny/flysystem-oss.
+ *
+ * (c) iidestiny <iidestiny@vip.qq.com>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace Iidestiny\Flysystem\Oss\Plugins;
 
-
 use League\Flysystem\Plugin\AbstractPlugin;
-use Exception;
 
 class Verify extends AbstractPlugin
 {
@@ -14,15 +21,15 @@ class Verify extends AbstractPlugin
     }
 
     /**
-     * 验签
+     * 验签.
      *
      * @return array
      */
     public function handle()
     {
         // oss 前面header、公钥 header
-        $authorizationBase64 = "";
-        $pubKeyUrlBase64     = "";
+        $authorizationBase64 = '';
+        $pubKeyUrlBase64 = '';
 
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
             $authorizationBase64 = $_SERVER['HTTP_AUTHORIZATION'];
@@ -33,7 +40,7 @@ class Verify extends AbstractPlugin
         }
 
         // 验证失败
-        if ($authorizationBase64 == '' || $pubKeyUrlBase64 == '') {
+        if ('' == $authorizationBase64 || '' == $pubKeyUrlBase64) {
             return [false, ['CallbackFailed' => 'authorization or pubKeyUrl is null']];
         }
 
@@ -48,7 +55,7 @@ class Verify extends AbstractPlugin
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         $pubKey = curl_exec($ch);
 
-        if ($pubKey == "") {
+        if ('' == $pubKey) {
             return [false, ['CallbackFailed' => 'curl is fail']];
         }
 
@@ -56,16 +63,16 @@ class Verify extends AbstractPlugin
         $body = file_get_contents('php://input');
         // 拼接待签名字符串
         $path = $_SERVER['REQUEST_URI'];
-        $pos  = strpos($path, '?');
-        if ($pos === false) {
-            $authStr = urldecode($path) . "\n" . $body;
+        $pos = strpos($path, '?');
+        if (false === $pos) {
+            $authStr = urldecode($path)."\n".$body;
         } else {
-            $authStr = urldecode(substr($path, 0, $pos)) . substr($path, $pos, strlen($path) - $pos) . "\n" . $body;
+            $authStr = urldecode(substr($path, 0, $pos)).substr($path, $pos, strlen($path) - $pos)."\n".$body;
         }
         // 验证签名
         $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
 
-        if ($ok !== 1) {
+        if (1 !== $ok) {
             return [false, ['CallbackFailed' => 'verify is fail, Illegal data']];
         }
 

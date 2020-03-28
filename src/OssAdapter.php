@@ -91,11 +91,11 @@ class OssAdapter extends AbstractAdapter
      */
     public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $prefix = '', $buckets = [], ...$params)
     {
-        $this->accessKeyId     = $accessKeyId;
+        $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
-        $this->endpoint        = $endpoint;
-        $this->bucket          = $bucket;
-        $this->isCName         = $isCName;
+        $this->endpoint = $endpoint;
+        $this->bucket = $bucket;
+        $this->isCName = $isCName;
         $this->setPathPrefix($prefix);
         $this->buckets = $buckets;
         $this->params = $params;
@@ -109,6 +109,7 @@ class OssAdapter extends AbstractAdapter
      * @param $bucket
      *
      * @return $this
+     *
      * @throws OssException
      */
     public function bucket($bucket)
@@ -143,7 +144,7 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * get ali sdk kernel class
+     * get ali sdk kernel class.
      *
      * @return OssClient
      */
@@ -170,50 +171,50 @@ class OssAdapter extends AbstractAdapter
             $prefix = ltrim($prefix, '/');
         }
 
-        $callbackParam        = [
-            'callbackUrl'      => $callBackUrl,
-            'callbackBody'     => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
+        $callbackParam = [
+            'callbackUrl' => $callBackUrl,
+            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}',
             'callbackBodyType' => 'application/x-www-form-urlencoded',
         ];
-        $callbackString       = json_encode($callbackParam);
+        $callbackString = json_encode($callbackParam);
         $base64_callback_body = base64_encode($callbackString);
 
-        $now        = time();
-        $end        = $now + $expire;
+        $now = time();
+        $end = $now + $expire;
         $expiration = $this->gmt_iso8601($end);
 
         // 最大文件大小.用户可以自己设置
-        $condition    = [
+        $condition = [
             0 => 'content-length-range',
             1 => 0,
             2 => $contentLengthRangeValue,
         ];
         $conditions[] = $condition;
 
-        $start        = [
+        $start = [
             0 => 'starts-with',
             1 => '$key',
             2 => $prefix,
         ];
         $conditions[] = $start;
 
-        $arr            = [
+        $arr = [
             'expiration' => $expiration,
             'conditions' => $conditions,
         ];
-        $policy         = json_encode($arr);
-        $base64_policy  = base64_encode($policy);
+        $policy = json_encode($arr);
+        $base64_policy = base64_encode($policy);
         $string_to_sign = $base64_policy;
-        $signature      = base64_encode(hash_hmac('sha1', $string_to_sign, $this->accessKeySecret, true));
+        $signature = base64_encode(hash_hmac('sha1', $string_to_sign, $this->accessKeySecret, true));
 
-        $response              = [];
-        $response['accessid']  = $this->accessKeyId;
-        $response['host']      = $this->normalizeHost();
-        $response['policy']    = $base64_policy;
+        $response = [];
+        $response['accessid'] = $this->accessKeyId;
+        $response['host'] = $this->normalizeHost();
+        $response['policy'] = $base64_policy;
         $response['signature'] = $signature;
-        $response['expire']    = $end;
-        $response['callback']  = $base64_callback_body;
-        $response['dir']       = $prefix;  // 这个参数是设置用户上传文件时指定的前缀。
+        $response['expire'] = $end;
+        $response['callback'] = $base64_callback_body;
+        $response['dir'] = $prefix;  // 这个参数是设置用户上传文件时指定的前缀。
 
         return json_encode($response);
     }
@@ -241,7 +242,7 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * temporary file url
+     * temporary file url.
      *
      * @param       $path
      * @param       $expiration
@@ -351,7 +352,7 @@ class OssAdapter extends AbstractAdapter
      */
     public function copy($path, $newpath)
     {
-        $path    = $this->applyPathPrefix($path);
+        $path = $this->applyPathPrefix($path);
         $newpath = $this->applyPathPrefix($newpath);
 
         try {
@@ -391,6 +392,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $dirname
      *
      * @return bool
+     *
      * @throws OssException
      */
     public function deleteDir($dirname)
@@ -429,7 +431,7 @@ class OssAdapter extends AbstractAdapter
     public function setVisibility($path, $visibility)
     {
         $object = $this->applyPathPrefix($path);
-        $acl    = (AdapterInterface::VISIBILITY_PUBLIC === $visibility) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
+        $acl = (AdapterInterface::VISIBILITY_PUBLIC === $visibility) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
 
         try {
             $this->client->putObjectAcl($this->bucket, $object, $acl);
@@ -465,7 +467,7 @@ class OssAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        return $this->normalizeHost() . ltrim($path, '/');
+        return $this->normalizeHost().ltrim($path, '/');
     }
 
     /**
@@ -599,7 +601,7 @@ class OssAdapter extends AbstractAdapter
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket . '.' . $this->endpoint;
+            $domain = $this->bucket.'.'.$this->endpoint;
         }
 
         if ($this->useSSL) {
@@ -608,7 +610,7 @@ class OssAdapter extends AbstractAdapter
             $domain = "http://{$domain}";
         }
 
-        return rtrim($domain, '/') . '/';
+        return rtrim($domain, '/').'/';
     }
 
     /**
@@ -618,10 +620,10 @@ class OssAdapter extends AbstractAdapter
     {
         if (0 === strpos($this->endpoint, 'http://')) {
             $this->endpoint = substr($this->endpoint, strlen('http://'));
-            $this->useSSL   = false;
+            $this->useSSL = false;
         } elseif (0 === strpos($this->endpoint, 'https://')) {
             $this->endpoint = substr($this->endpoint, strlen('https://'));
-            $this->useSSL   = true;
+            $this->useSSL = true;
         }
     }
 
@@ -651,18 +653,18 @@ class OssAdapter extends AbstractAdapter
      */
     public function listDirObjects($dirname = '', $recursive = false)
     {
-        $delimiter  = '/';
+        $delimiter = '/';
         $nextMarker = '';
-        $maxkeys    = 1000;
+        $maxkeys = 1000;
 
         $result = [];
 
         while (true) {
             $options = [
                 'delimiter' => $delimiter,
-                'prefix'    => $dirname,
-                'max-keys'  => $maxkeys,
-                'marker'    => $nextMarker,
+                'prefix' => $dirname,
+                'max-keys' => $maxkeys,
+                'marker' => $nextMarker,
             ];
 
             try {
@@ -677,14 +679,14 @@ class OssAdapter extends AbstractAdapter
 
             if (!empty($objectList)) {
                 foreach ($objectList as $objectInfo) {
-                    $object['Prefix']       = $dirname;
-                    $object['Key']          = $objectInfo->getKey();
+                    $object['Prefix'] = $dirname;
+                    $object['Key'] = $objectInfo->getKey();
                     $object['LastModified'] = $objectInfo->getLastModified();
-                    $object['eTag']         = $objectInfo->getETag();
-                    $object['Type']         = $objectInfo->getType();
-                    $object['Size']         = $objectInfo->getSize();
+                    $object['eTag'] = $objectInfo->getETag();
+                    $object['Type'] = $objectInfo->getType();
+                    $object['Size'] = $objectInfo->getSize();
                     $object['StorageClass'] = $objectInfo->getStorageClass();
-                    $result['objects'][]    = $object;
+                    $result['objects'][] = $object;
                 }
             } else {
                 $result['objects'] = [];
@@ -701,7 +703,7 @@ class OssAdapter extends AbstractAdapter
             // Recursive directory
             if ($recursive) {
                 foreach ($result['prefix'] as $prefix) {
-                    $next              = $this->listDirObjects($prefix, $recursive);
+                    $next = $this->listDirObjects($prefix, $recursive);
                     $result['objects'] = array_merge($result['objects'], $next['objects']);
                 }
             }
@@ -732,11 +734,11 @@ class OssAdapter extends AbstractAdapter
         }
 
         return [
-            'type'      => 'file',
-            'mimetype'  => $meta['content-type'],
-            'path'      => $filePath,
+            'type' => 'file',
+            'mimetype' => $meta['content-type'],
+            'path' => $filePath,
             'timestamp' => $meta['info']['filetime'],
-            'size'      => $meta['content-length'],
+            'size' => $meta['content-length'],
         ];
     }
 }

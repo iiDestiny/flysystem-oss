@@ -32,14 +32,14 @@ class OssAdapter extends AbstractAdapter
 
     // 系统参数
     const SYSTEM_FIELD = [
-        'bucket'   => '${bucket}',
-        'etag'     => '${etag}',
+        'bucket' => '${bucket}',
+        'etag' => '${etag}',
         'filename' => '${object}',
-        'size'     => '${size}',
+        'size' => '${size}',
         'mimeType' => '${mimeType}',
-        'height'   => '${imageInfo.height}',
-        'width'    => '${imageInfo.width}',
-        'format'   => '${imageInfo.format}',
+        'height' => '${imageInfo.height}',
+        'width' => '${imageInfo.width}',
+        'format' => '${imageInfo.format}',
     ];
 
     /**

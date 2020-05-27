@@ -149,7 +149,7 @@ $flysystem->addPlugin(new SignatureConfig());
  * 5. 文件大小限制
  * 6. 回调系统参数, 默认值: Iidestiny\Flysystem\Oss\OssAdapter::SYSTEM_FIELD
  */
-object $flysystem->signatureConfig($prefix = '/', $callBackUrl = '', $customData = [], $expire = 30, $maxSize = 1024 * 1024 * 2, );
+object $flysystem->signatureConfig($prefix = '/', $callBackUrl = '', $customData = [], $expire = 30, $maxSize = 1024 * 1024 * 2, $systemData = ['etag' => '${etag}', 'filename' => '${object}']);
 ```
 
 ## 直传回调验签

@@ -30,6 +30,18 @@ class OssAdapter extends AbstractAdapter
     use NotSupportingVisibilityTrait;
     use SignatureTrait;
 
+    // 系统参数
+    const SYSTEM_FIELD = [
+        'bucket'   => '${bucket}',
+        'etag'     => '${etag}',
+        'filename' => '${object}',
+        'size'     => '${size}',
+        'mimeType' => '${mimeType}',
+        'height'   => '${imageInfo.height}',
+        'width'    => '${imageInfo.width}',
+        'format'   => '${imageInfo.format}',
+    ];
+
     /**
      * @var
      */
@@ -166,10 +178,23 @@ class OssAdapter extends AbstractAdapter
      *
      * @throws \Exception
      */
-    public function signatureConfig($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000)
+    public function signatureConfig($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000, $systemData = null)
     {
         if (!empty($prefix)) {
             $prefix = ltrim($prefix, '/');
+        }
+
+        // 系统参数
+        $system = [];
+        if (empty($systemData)) {
+            $system = self::SYSTEM_FIELD;
+        } else {
+            foreach ($systemData as $key => $value) {
+                if (!in_array($value, self::SYSTEM_FIELD)) {
+                    throw new \InvalidArgumentException("Invalid oss system filed: ${value}");
+                }
+                $system[$key] = $value;
+            }
         }
 
         // 自定义参数
@@ -184,7 +209,8 @@ class OssAdapter extends AbstractAdapter
 
         $callbackParam = [
             'callbackUrl' => $callBackUrl,
-            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}&format=${imageInfo.format}&'.urldecode(http_build_query($data)),
+//            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}&'.urldecode(http_build_query($data)),
+            'callbackBody' => urldecode(http_build_query(array_merge($system, $data))),
             'callbackBodyType' => 'application/x-www-form-urlencoded',
         ];
         $callbackString = json_encode($callbackParam);

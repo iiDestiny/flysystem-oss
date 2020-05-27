@@ -173,12 +173,13 @@ class OssAdapter extends AbstractAdapter
      * @param array  $customData
      * @param int    $expire
      * @param int    $contentLengthRangeValue
+     * @param array  $systemData
      *
      * @return false|string
      *
      * @throws \Exception
      */
-    public function signatureConfig($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000, $systemData = null)
+    public function signatureConfig($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000, $systemData = [])
     {
         if (!empty($prefix)) {
             $prefix = ltrim($prefix, '/');

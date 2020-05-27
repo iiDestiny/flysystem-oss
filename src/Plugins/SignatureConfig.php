@@ -33,6 +33,7 @@ class SignatureConfig extends AbstractPlugin
      * @param array  $customData
      * @param int    $expire
      * @param int    $contentLengthRangeValue
+     * @param array  $systemData
      *
      * @return mixed
      */

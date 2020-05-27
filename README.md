@@ -147,7 +147,7 @@ $flysystem->addPlugin(new SignatureConfig());
  * 3. 回调自定义参数，oss 回传应用服务器时会带上
  * 4. 当前直传配置链接有效期
  * 5. 文件大小限制
- * 6. 回调系统参数, 默认值: Iidestiny\Flysystem\Oss\OssAdapter::SYSTEM_FIELD, 具体系统字段参见 [OSS 文档](https://help.aliyun.com/document_detail/31989.html?spm=a2c4g.11186623.6.1668.50d07d2dPHoGBR#title-wl8-pso-fhu)
+ * 6. 回调系统参数, 默认值: Iidestiny\Flysystem\Oss\OssAdapter::SYSTEM_FIELD
  */
 object $flysystem->signatureConfig($prefix = '/', $callBackUrl = '', $customData = [], $expire = 30, $maxSize = 1024 * 1024 * 2, );
 ```

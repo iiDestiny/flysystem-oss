@@ -184,7 +184,7 @@ class OssAdapter extends AbstractAdapter
 
         $callbackParam = [
             'callbackUrl' => $callBackUrl,
-            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}&'.urldecode(http_build_query($data)),
+            'callbackBody' => 'filename=${object}&size=${size}&mimeType=${mimeType}&height=${imageInfo.height}&width=${imageInfo.width}&format=${imageInfo.format}&'.urldecode(http_build_query($data)),
             'callbackBodyType' => 'application/x-www-form-urlencoded',
         ];
         $callbackString = json_encode($callbackParam);

@@ -36,8 +36,8 @@ class SignatureConfig extends AbstractPlugin
      *
      * @return mixed
      */
-    public function handle($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000)
+    public function handle($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000, $systemData = [])
     {
-        return $this->filesystem->getAdapter()->signatureConfig($prefix, $callBackUrl, $customData, $expire, $contentLengthRangeValue);
+        return $this->filesystem->getAdapter()->signatureConfig($prefix, $callBackUrl, $customData, $expire, $contentLengthRangeValue, $systemData);
     }
 }

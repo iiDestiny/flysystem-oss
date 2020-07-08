@@ -150,9 +150,7 @@ class OssAdapter extends AbstractAdapter
      */
     protected function initClient()
     {
-        if (empty($this->client)) {
-            $this->client = new OssClient($this->accessKeyId, $this->accessKeySecret, $this->endpoint, $this->isCName, ...$this->params);
-        }
+        $this->client = new OssClient($this->accessKeyId, $this->accessKeySecret, $this->endpoint, $this->isCName, ...$this->params);
     }
 
     /**

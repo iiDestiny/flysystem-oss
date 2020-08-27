@@ -11,8 +11,6 @@
 
 namespace Iidestiny\Flysystem\Oss\Traits;
 
-use DateTime;
-
 trait SignatureTrait
 {
     /**
@@ -26,12 +24,7 @@ trait SignatureTrait
      */
     public function gmt_iso8601($time)
     {
-        $dtStr = date('c', $time);
-        $myDatetime = new DateTime($dtStr);
-        $expiration = $myDatetime->format(DateTime::ISO8601);
-        $pos = strpos($expiration, '+');
-        $expiration = substr($expiration, 0, $pos);
-
-        return $expiration.'Z';
+        // fix bug https://connect.console.aliyun.com/connect/detail/162632
+        return (new \DateTime(null, new \DateTimeZone('UTC')))->setTimestamp($time)->format('Y-m-d\TH:i:s\Z');
     }
 }

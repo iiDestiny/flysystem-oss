@@ -28,9 +28,8 @@ class SignUrl extends AbstractPlugin
     /**
      * handle.
      *
-     * @param       $path
-     * @param       $timeout
-     * @param array $options
+     * @param $path
+     * @param $timeout
      *
      * @return mixed
      */

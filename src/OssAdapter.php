@@ -258,9 +258,8 @@ class OssAdapter extends AbstractAdapter
     /**
      * sign url.
      *
-     * @param       $path
-     * @param       $timeout
-     * @param array $options
+     * @param $path
+     * @param $timeout
      *
      * @return bool|string
      */
@@ -280,9 +279,8 @@ class OssAdapter extends AbstractAdapter
     /**
      * temporary file url.
      *
-     * @param       $path
-     * @param       $expiration
-     * @param array $options
+     * @param $path
+     * @param $expiration
      *
      * @return bool|string
      */
@@ -296,7 +294,6 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string $path
      * @param string $contents
-     * @param Config $config
      *
      * @return array|bool|false
      */
@@ -320,7 +317,6 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string   $path
      * @param resource $resource
-     * @param Config   $config
      *
      * @return array|bool|false
      */
@@ -336,7 +332,6 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string $path
      * @param string $contents
-     * @param Config $config
      *
      * @return array|bool|false
      */
@@ -350,7 +345,6 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string   $path
      * @param resource $resource
-     * @param Config   $config
      *
      * @return array|bool|false
      */
@@ -445,7 +439,6 @@ class OssAdapter extends AbstractAdapter
      * create a directory.
      *
      * @param string $dirname
-     * @param Config $config
      *
      * @return bool
      */
@@ -754,8 +747,6 @@ class OssAdapter extends AbstractAdapter
 
     /**
      * normalize file info.
-     *
-     * @param array $stats
      *
      * @return array
      */

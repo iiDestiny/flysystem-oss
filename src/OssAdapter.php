@@ -68,6 +68,11 @@ class OssAdapter extends AbstractAdapter
     protected $isCName;
 
     /**
+     * @var string
+     */
+    protected $cdnHost;
+
+    /**
      * @var array
      */
     protected $buckets;
@@ -95,19 +100,21 @@ class OssAdapter extends AbstractAdapter
      * @param       $endpoint
      * @param       $bucket
      * @param bool  $isCName
+     * @param string $cdnHost
      * @param       $prefix
      * @param array $buckets
      * @param mixed ...$params
      *
      * @throws OssException
      */
-    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $prefix = '', $buckets = [], ...$params)
+    public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName = false, $prefix = '', $buckets = [], $cdnHost = '', ...$params)
     {
         $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
         $this->endpoint = $endpoint;
         $this->bucket = $bucket;
         $this->isCName = $isCName;
+        $this->cdnHost = $cdnHost;
         $this->setPathPrefix($prefix);
         $this->buckets = $buckets;
         $this->params = $params;
@@ -628,7 +635,11 @@ class OssAdapter extends AbstractAdapter
     protected function normalizeHost()
     {
         if ($this->isCName) {
-            $domain = $this->endpoint;
+            if (!empty($this->cdnHost)) {
+                $domain = $this->cdnHost;
+            } else {
+                $domain = $this->endpoint;
+            }
         } else {
             $domain = $this->bucket.'.'.$this->endpoint;
         }

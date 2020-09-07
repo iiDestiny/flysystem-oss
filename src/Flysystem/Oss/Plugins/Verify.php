@@ -1,20 +1,12 @@
 <?php
 
-/*
- * This file is part of the iidestiny/flysystem-oss.
- *
- * (c) iidestiny <iidestiny@vip.qq.com>
- *
- * This source file is subject to the MIT license that is bundled
- * with this source code in the file LICENSE.
- */
-
-namespace Iidestiny\Flysystem\Oss\Plugins;
+namespace Jason\Flysystem\Oss\Plugins;
 
 use League\Flysystem\Plugin\AbstractPlugin;
 
 class Verify extends AbstractPlugin
 {
+
     public function getMethod()
     {
         return 'verify';
@@ -22,14 +14,13 @@ class Verify extends AbstractPlugin
 
     /**
      * 验签.
-     *
      * @return array
      */
     public function handle()
     {
         // oss 前面header、公钥 header
         $authorizationBase64 = '';
-        $pubKeyUrlBase64 = '';
+        $pubKeyUrlBase64     = '';
 
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
             $authorizationBase64 = $_SERVER['HTTP_AUTHORIZATION'];
@@ -63,11 +54,11 @@ class Verify extends AbstractPlugin
         $body = file_get_contents('php://input');
         // 拼接待签名字符串
         $path = $_SERVER['REQUEST_URI'];
-        $pos = strpos($path, '?');
+        $pos  = strpos($path, '?');
         if (false === $pos) {
-            $authStr = urldecode($path)."\n".$body;
+            $authStr = urldecode($path) . "\n" . $body;
         } else {
-            $authStr = urldecode(substr($path, 0, $pos)).substr($path, $pos, strlen($path) - $pos)."\n".$body;
+            $authStr = urldecode(substr($path, 0, $pos)) . substr($path, $pos, strlen($path) - $pos) . "\n" . $body;
         }
         // 验证签名
         $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
@@ -80,4 +71,5 @@ class Verify extends AbstractPlugin
 
         return [true, $data];
     }
+
 }

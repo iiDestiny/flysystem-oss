@@ -3,7 +3,7 @@
 namespace Jason\Flysystem\Oss;
 
 use Carbon\Carbon;
-use Iidestiny\Flysystem\Oss\Traits\SignatureTrait;
+use Jason\Flysystem\Oss\Traits\SignatureTrait;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 use League\Flysystem\AdapterInterface;
@@ -11,10 +11,6 @@ use League\Flysystem\Config;
 use OSS\Core\OssException;
 use OSS\OssClient;
 
-/**
- * Class OssAdapter.
- * @author iidestiny <iidestiny@vip.qq.com>
- */
 class OssAdapter extends AbstractAdapter
 {
 
@@ -90,7 +86,7 @@ class OssAdapter extends AbstractAdapter
      * @param string|null $cdnHost
      * @throws \OSS\Core\OssException
      */
-    public function __construct(string $accessKeyId, string $accessKeySecret, string $endpoint, string $bucket, bool $isCName = false, string $prefix = '', array $buckets = [], string $cdnHost = null)
+    public function __construct(string $accessKeyId, string $accessKeySecret, string $endpoint, string $bucket, bool $isCName = false, string $prefix = null, array $buckets = [], string $cdnHost = null)
     {
         $this->accessKeyId     = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
@@ -276,7 +272,7 @@ class OssAdapter extends AbstractAdapter
      * @param \League\Flysystem\Config $config
      * @return array|bool
      */
-    public function write(string $path, string $contents, Config $config)
+    public function write($path, $contents, Config $config)
     {
         $path = $this->applyPathPrefix($path);
 
@@ -298,7 +294,7 @@ class OssAdapter extends AbstractAdapter
      * @param \League\Flysystem\Config $config
      * @return array|bool|false
      */
-    public function writeStream(string $path, $resource, Config $config)
+    public function writeStream($path, $resource, Config $config)
     {
         $contents = stream_get_contents($resource);
 
@@ -312,7 +308,7 @@ class OssAdapter extends AbstractAdapter
      * @param \League\Flysystem\Config $config
      * @return array|bool
      */
-    public function update(string $path, string $contents, Config $config)
+    public function update($path, $contents, Config $config)
     {
         return $this->write($path, $contents, $config);
     }
@@ -324,7 +320,7 @@ class OssAdapter extends AbstractAdapter
      * @param \League\Flysystem\Config $config
      * @return array|bool
      */
-    public function updateStream(string $path, $resource, Config $config)
+    public function updateStream($path, $resource, Config $config)
     {
         return $this->writeStream($path, $resource, $config);
     }
@@ -336,7 +332,7 @@ class OssAdapter extends AbstractAdapter
      * @return bool
      * @throws \OSS\Core\OssException
      */
-    public function rename(string $path, string $newPath)
+    public function rename($path, $newPath)
     {
         if (!$this->copy($path, $newPath)) {
             return false;
@@ -351,7 +347,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $newPath
      * @return bool
      */
-    public function copy(string $path, string $newPath)
+    public function copy($path, $newPath)
     {
         $path    = $this->applyPathPrefix($path);
         $newpath = $this->applyPathPrefix($newPath);
@@ -371,7 +367,7 @@ class OssAdapter extends AbstractAdapter
      * @return bool
      * @throws \OSS\Core\OssException
      */
-    public function delete(string $path)
+    public function delete($path)
     {
         $path = $this->applyPathPrefix($path);
 
@@ -390,7 +386,7 @@ class OssAdapter extends AbstractAdapter
      * @return bool
      * @throws \OSS\Core\OssException
      */
-    public function deleteDir(string $dirname)
+    public function deleteDir($dirname)
     {
         $fileList = $this->listContents($dirname, true);
         foreach ($fileList as $file) {
@@ -406,7 +402,7 @@ class OssAdapter extends AbstractAdapter
      * @param \League\Flysystem\Config $config
      * @return bool
      */
-    public function createDir(string $dirname, Config $config)
+    public function createDir($dirname, Config $config)
     {
         $defaultFile = trim($dirname, '/') . '/oss.txt';
 
@@ -419,7 +415,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $visibility
      * @return array|bool|false
      */
-    public function setVisibility(string $path, string $visibility)
+    public function setVisibility($path, $visibility)
     {
         $object = $this->applyPathPrefix($path);
         $acl    = (AdapterInterface::VISIBILITY_PUBLIC === $visibility) ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
@@ -438,7 +434,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @return array|bool|null
      */
-    public function has(string $path)
+    public function has($path)
     {
         $path = $this->applyPathPrefix($path);
 
@@ -462,7 +458,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @return array|bool|false
      */
-    public function read(string $path)
+    public function read($path)
     {
         try {
             $contents = $this->getObject($path);
@@ -478,7 +474,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @return array|bool|false
      */
-    public function readStream(string $path)
+    public function readStream($path)
     {
         try {
             $stream = $this->getObject($path);
@@ -496,7 +492,7 @@ class OssAdapter extends AbstractAdapter
      * @return array
      * @throws OssException
      */
-    public function listContents(string $directory = '', bool $recursive = false)
+    public function listContents($directory = '', $recursive = false)
     {
         $list = [];
 
@@ -520,7 +516,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @return array|bool|false
      */
-    public function getMetadata(string $path)
+    public function getMetadata($path)
     {
         $path = $this->applyPathPrefix($path);
 
@@ -538,7 +534,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @return array|false
      */
-    public function getSize(string $path)
+    public function getSize($path)
     {
         return $this->normalizeFileInfo(['Key' => $path]);
     }
@@ -548,7 +544,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @return array|false
      */
-    public function getMimetype(string $path)
+    public function getMimetype($path)
     {
         return $this->normalizeFileInfo(['Key' => $path]);
     }
@@ -558,7 +554,7 @@ class OssAdapter extends AbstractAdapter
      * @param string $path
      * @return array|false
      */
-    public function getTimestamp(string $path)
+    public function getTimestamp($path)
     {
         return $this->normalizeFileInfo(['Key' => $path]);
     }

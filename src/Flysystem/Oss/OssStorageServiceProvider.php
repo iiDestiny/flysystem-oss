@@ -2,6 +2,7 @@
 
 namespace Jason\Flysystem\Oss;
 
+use Illuminate\Support\ServiceProvider;
 use Jason\Flysystem\Oss\Plugins\FileUrl;
 use Jason\Flysystem\Oss\Plugins\Kernel;
 use Jason\Flysystem\Oss\Plugins\SetBucket;
@@ -9,7 +10,6 @@ use Jason\Flysystem\Oss\Plugins\SignatureConfig;
 use Jason\Flysystem\Oss\Plugins\SignUrl;
 use Jason\Flysystem\Oss\Plugins\TemporaryUrl;
 use Jason\Flysystem\Oss\Plugins\Verify;
-use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Filesystem;
 
 /**
@@ -28,7 +28,7 @@ class OssStorageServiceProvider extends ServiceProvider
         app('filesystem')->extend('oss', function ($app, $config) {
             $root    = $config['root'] ?? null;
             $buckets = isset($config['buckets']) ? $config['buckets'] : [];
-            $cdnHost = isset($config['cdnHost']) ? $config['cdnHost'] : '';
+            $cdnHost = isset($config['cdnHost']) ? $config['cdnHost'] : null;
             $adapter = new OssAdapter(
                 $config['access_key'],
                 $config['secret_key'],

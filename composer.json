@@ -29,7 +29,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Jason\\Filesystem\\Oss\\OssStorageServiceProvider"
+                "Jason\\Flysystem\\Oss\\OssStorageServiceProvider"
             ]
         }
     }

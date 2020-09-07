@@ -122,6 +122,7 @@ class OssAdapter extends AbstractAdapter
         $this->endpoint        = $bucketConfig['endpoint'];
         $this->bucket          = $bucketConfig['bucket'];
         $this->isCName         = $bucketConfig['isCName'];
+        $this->cdnHost         = $bucketConfig['cdnHost'];
 
         $this->initClient();
         $this->checkEndpoint();

@@ -548,16 +548,25 @@ class OssAdapter extends AbstractAdapter
     public function listContents($directory = '', $recursive = false)
     {
         $list = [];
-
-        $result = $this->listDirObjects($directory, true);
+        $directory = '/' == substr($directory, -1) ? $directory : $directory.'/';
+        $result = $this->listDirObjects($directory, $recursive);
 
         if (!empty($result['objects'])) {
             foreach ($result['objects'] as $files) {
-                if (!$fileInfo = $this->normalizeFileInfo($files)) {
+                if ('oss.txt' == substr($files['Key'], -7) || !$fileInfo = $this->normalizeFileInfo($files)) {
                     continue;
                 }
-
                 $list[] = $fileInfo;
+            }
+        }
+
+        // prefix
+        if (!empty($result['prefix'])) {
+            foreach ($result['prefix'] as $dir) {
+                $list[] = [
+                    'type' => 'dir',
+                    'path' => $dir,
+                ];
             }
         }
 

@@ -527,7 +527,9 @@ class OssAdapter extends AbstractAdapter
     public function readStream($path)
     {
         try {
-            $stream = $this->getObject($path);
+            $stream = fopen('php://temp', 'w+b');
+            fwrite($stream, $this->getObject($path));
+            rewind($stream);
         } catch (OssException $exception) {
             return false;
         }

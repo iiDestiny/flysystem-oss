@@ -14,6 +14,13 @@
 <a href="https://996.icu"><img src="https://img.shields.io/badge/license-Anti%20996-blue.svg" alt="996.icu" /></a>
 </p>
 
+<p align="center">
+感谢关注「GitHub 热门」公众号，带你了解技术圈内热门新鲜事！
+
+![file](https://cdn.learnku.com/uploads/images/202011/09/4430/qsECw9Ctgv.jpg!large)
+</p>
+
+
 ## 扩展包要求
 
 -   PHP >= 7.0

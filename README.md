@@ -16,6 +16,7 @@
 
 <p align="center">
 感谢关注「GitHub 热门」公众号，带你了解技术圈内热门新鲜事！
+<br/>
 <img src="https://cdn.learnku.com/uploads/images/202011/09/4430/qsECw9Ctgv.jpg!large">
 </p>
 

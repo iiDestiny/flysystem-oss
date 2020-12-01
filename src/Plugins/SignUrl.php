@@ -12,6 +12,7 @@
 namespace Iidestiny\Flysystem\Oss\Plugins;
 
 use League\Flysystem\Plugin\AbstractPlugin;
+use OSS\OssClient;
 
 class SignUrl extends AbstractPlugin
 {
@@ -33,8 +34,8 @@ class SignUrl extends AbstractPlugin
      *
      * @return mixed
      */
-    public function handle($path, $timeout, array $options = [])
+    public function handle($path, $timeout, array $options = [], $method = OssClient::OSS_HTTP_GET)
     {
-        return $this->filesystem->getAdapter()->signUrl($path, $timeout, $options);
+        return $this->filesystem->getAdapter()->signUrl($path, $timeout, $options, $method);
     }
 }

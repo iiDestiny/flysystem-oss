@@ -103,12 +103,20 @@ string $flysystem->getUrl('file.md');
 // url 访问有效期 & 图片处理「$timeout 为多少秒过期」
 $flysystem->addPlugin(new SignUrl());
 
- string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
+// 默认GET
+string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
+
+// PUT方式
+string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100'],'PUT');
 
  // url 访问有效期「$expiration 为未来时间 2019-05-05 17:50:32」
 $flysystem->addPlugin(new TemporaryUrl());
 
+// 默认GET
 string $flysystem->getTemporaryUrl('file.md', $expiration);
+
+// PUT方式
+string $flysystem->getTemporaryUrl('file.md', $expiration,[],'PUT');
 
 // 多个bucket切换
 $flysystem->addPlugin(new SetBucket());

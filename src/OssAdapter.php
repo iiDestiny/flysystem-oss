@@ -263,7 +263,7 @@ class OssAdapter extends AbstractAdapter
      *
      * @return bool|string
      */
-    public function signUrl($path, $timeout, array $options = [],$method = OssClient::OSS_HTTP_GET)
+    public function signUrl($path, $timeout, array $options = [], $method = OssClient::OSS_HTTP_GET)
     {
         $path = $this->applyPathPrefix($path);
 
@@ -284,9 +284,9 @@ class OssAdapter extends AbstractAdapter
      *
      * @return bool|string
      */
-    public function getTemporaryUrl($path, $expiration, array $options = [])
+    public function getTemporaryUrl($path, $expiration, array $options = [], $method = OssClient::OSS_HTTP_GET)
     {
-        return $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options);
+        return $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options, $method);
     }
 
     /**

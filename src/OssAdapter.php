@@ -88,6 +88,11 @@ class OssAdapter extends AbstractAdapter
     protected $useSSL = false;
 
     /**
+     * @var string|null
+     */
+    protected $cdnUrl = null;
+
+    /**
      * OssAdapter constructor.
      *
      * @param       $accessKeyId
@@ -113,6 +118,16 @@ class OssAdapter extends AbstractAdapter
         $this->params = $params;
         $this->initClient();
         $this->checkEndpoint();
+    }
+
+    /**
+     * 设置cdn的url
+     *
+     * @param string|null $url
+     */
+    public function setCdnUrl($url)
+    {
+        $this->cdnUrl = $url;
     }
 
     /**
@@ -495,6 +510,10 @@ class OssAdapter extends AbstractAdapter
     public function getUrl($path)
     {
         $path = $this->applyPathPrefix($path);
+
+        if (! is_null($this->cdnUrl)) {
+            return rtrim($this->cdnUrl, '/').'/'.ltrim($path, '/');
+        }
 
         return $this->normalizeHost().ltrim($path, '/');
     }

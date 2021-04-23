@@ -47,6 +47,8 @@ $isCName = true; // 如果 isCname 为 false，endpoint 应配置 oss 提供的�
 
 $adapter = new OssAdapter($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName, $prefix);
 
+// $adapter->setCdnUrl('https://cdn.iidestiny.com'); // 设置cdn url
+
 $flysystem = new Filesystem($adapter);
 
 ```

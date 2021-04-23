@@ -121,7 +121,7 @@ class OssAdapter extends AbstractAdapter
     }
 
     /**
-     * 设置cdn的url
+     * 设置cdn的url.
      *
      * @param string|null $url
      */
@@ -511,7 +511,7 @@ class OssAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        if (! is_null($this->cdnUrl)) {
+        if (!is_null($this->cdnUrl)) {
             return rtrim($this->cdnUrl, '/').'/'.ltrim($path, '/');
         }
 

@@ -216,8 +216,8 @@ class OssAdapter extends AbstractAdapter
         $data = [];
         if (!empty($customData)) {
             foreach ($customData as $key => $value) {
-                $callbackVar['x:'.$key] = $value;
-                $data[$key] = '${x:'.$key.'}';
+                $callbackVar['x:' . $key] = $value;
+                $data[$key] = '${x:' . $key . '}';
             }
         }
 
@@ -380,11 +380,24 @@ class OssAdapter extends AbstractAdapter
      */
     public function rename($path, $newpath)
     {
+        $files = [];
         if (!$this->copy($path, $newpath)) {
             return false;
         }
-
-        return $this->delete($path);
+        if ($this->client->doesObjectExist($this->bucket, rtrim($path, '/') . '/')) {
+            $path = rtrim($path, '/') . '/';
+            $newpath = rtrim($newpath, '/') . '/';
+            $files = $this->listContents($path, true);
+        }
+        if (count($files) > 0) {
+            foreach ($files as $file) {
+                $this->delete($file['path']);
+            }
+            $this->delete($path);
+        } else {
+            $this->delete($path);
+        }
+        return true;
     }
 
     /**
@@ -397,11 +410,23 @@ class OssAdapter extends AbstractAdapter
      */
     public function copy($path, $newpath)
     {
+        $files = [];
         $path = $this->applyPathPrefix($path);
         $newpath = $this->applyPathPrefix($newpath);
-
+        if ($this->client->doesObjectExist($this->bucket, rtrim($path, '/') . '/')) {
+            $path = rtrim($path, '/') . '/';
+            $newpath = rtrim($newpath, '/') . '/';
+            $files = $this->listContents($path, true);
+        }
         try {
-            $this->client->copyObject($this->bucket, $path, $this->bucket, $newpath);
+            if (count($files) > 0) {
+                foreach ($files as $file) {
+                    $this->client->copyObject($this->bucket, $file['path'], $this->bucket, str_replace($path, $newpath, $file['path']));
+                }
+                $this->client->copyObject($this->bucket, $path, $this->bucket, $newpath);
+            } else {
+                $this->client->copyObject($this->bucket, $path, $this->bucket, $newpath);
+            }
         } catch (OssException $exception) {
             return false;
         }
@@ -421,7 +446,9 @@ class OssAdapter extends AbstractAdapter
     public function delete($path)
     {
         $path = $this->applyPathPrefix($path);
-
+        if ($this->client->doesObjectExist($this->bucket, rtrim($path, '/') . '/')) {
+            $path = rtrim($path, '/') . '/';
+        }
         try {
             $this->client->deleteObject($this->bucket, $path);
         } catch (OssException $ossException) {
@@ -437,17 +464,21 @@ class OssAdapter extends AbstractAdapter
      * @param string $dirname
      *
      * @return bool
-     *
-     * @throws OssException
      */
     public function deleteDir($dirname)
     {
-        $fileList = $this->listContents($dirname, true);
-        foreach ($fileList as $file) {
-            $this->delete($file['path']);
+        if ($this->client->doesObjectExist($this->bucket, rtrim($dirname, '/') . '/')) {
+            $dirname = rtrim($dirname, '/') . '/';
+            $files = $this->listContents($dirname, true);
+        }
+        if (count($files) > 0) {
+            foreach ($files as $file) {
+                $this->delete($file['path']);
+            }
+            $this->delete($dirname);
         }
 
-        return !$this->has($dirname);
+        return true;
     }
 
     /**
@@ -455,13 +486,13 @@ class OssAdapter extends AbstractAdapter
      *
      * @param string $dirname
      *
-     * @return bool
+     * @return array|false
      */
     public function createDir($dirname, Config $config)
     {
-        $defaultFile = trim($dirname, '/').'/oss.txt';
+        $this->client->createObjectDir($this->bucket, $dirname, null);
 
-        return $this->write($defaultFile, '当虚拟目录下有其他文件时，可删除此文件~', $config);
+        return ['path' => $dirname, 'type' => 'dir'];
     }
 
     /**
@@ -496,7 +527,9 @@ class OssAdapter extends AbstractAdapter
     public function has($path)
     {
         $path = $this->applyPathPrefix($path);
-
+        if ($this->client->doesObjectExist($this->bucket, rtrim($path, '/') . '/')) {
+            return true;
+        }
         return $this->client->doesObjectExist($this->bucket, $path);
     }
 
@@ -512,10 +545,10 @@ class OssAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         if (!is_null($this->cdnUrl)) {
-            return rtrim($this->cdnUrl, '/').'/'.ltrim($path, '/');
+            return rtrim($this->cdnUrl, '/') . '/' . ltrim($path, '/');
         }
 
-        return $this->normalizeHost().ltrim($path, '/');
+        return $this->normalizeHost() . ltrim($path, '/');
     }
 
     /**
@@ -569,28 +602,27 @@ class OssAdapter extends AbstractAdapter
     public function listContents($directory = '', $recursive = false)
     {
         $list = [];
-        $directory = '/' == substr($directory, -1) ? $directory : $directory.'/';
+        if ($directory != '') {
+            $directory = rtrim($directory, '/') . '/';
+        }
         $result = $this->listDirObjects($directory, $recursive);
 
         if (!empty($result['objects'])) {
             foreach ($result['objects'] as $files) {
-                if ('oss.txt' == substr($files['Key'], -7) || !$fileInfo = $this->normalizeFileInfo($files)) {
+                if (!$fileInfo = $this->normalizeFileInfo($files, false)) {
                     continue;
+                }
+                if ($fileInfo['mimetype'] == 'application/octet-stream' && $fileInfo['size'] == 0) {
+                    $fileInfo['type'] = "dir";
                 }
                 $list[] = $fileInfo;
             }
         }
-
-        // prefix
         if (!empty($result['prefix'])) {
-            foreach ($result['prefix'] as $dir) {
-                $list[] = [
-                    'type' => 'dir',
-                    'path' => $dir,
-                ];
+            foreach ($result['prefix'] as $folder) {
+                $list[] = ["type" => 'dir', "mimetype" => "application/octet-stream", "size" => 0, "path" => $folder, "timestamp" => Carbon::now()->timestamp];
             }
         }
-
         return $list;
     }
 
@@ -607,6 +639,14 @@ class OssAdapter extends AbstractAdapter
 
         try {
             $metadata = $this->client->getObjectMeta($this->bucket, $path);
+            $extraMeta = [
+                'type' => data_get($metadata, 'content-length', 0) == 0 && data_get($metadata, 'content-type', 'application/octet-stream') == 'application/octet-stream' ? 'dir' : 'file',
+                'mimetype' => $metadata['content-type'],
+                'path' => $path,
+                'timestamp' => $metadata['info']['filetime'],
+                'size' => $metadata['content-length'],
+            ];
+            $metadata = array_merge($metadata, $extraMeta);
         } catch (OssException $exception) {
             return false;
         }
@@ -660,7 +700,7 @@ class OssAdapter extends AbstractAdapter
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket.'.'.$this->endpoint;
+            $domain = $this->bucket . '.' . $this->endpoint;
         }
 
         if ($this->useSSL) {
@@ -669,7 +709,7 @@ class OssAdapter extends AbstractAdapter
             $domain = "http://{$domain}";
         }
 
-        return rtrim($domain, '/').'/';
+        return rtrim($domain, '/') . '/';
     }
 
     /**
@@ -713,6 +753,10 @@ class OssAdapter extends AbstractAdapter
     public function listDirObjects($dirname = '', $recursive = false)
     {
         $delimiter = '/';
+        // Recursive directory
+        if ($recursive) {
+            $delimiter = '';
+        }
         $nextMarker = '';
         $maxkeys = 1000;
 
@@ -735,7 +779,9 @@ class OssAdapter extends AbstractAdapter
             $nextMarker = $listObjectInfo->getNextMarker();
             $objectList = $listObjectInfo->getObjectList();
             $prefixList = $listObjectInfo->getPrefixList();
-
+            $objectList = collect($objectList)->filter(function ($object) use ($dirname) {
+                return $object->getKey() != $dirname;
+            })->toArray();
             if (!empty($objectList)) {
                 foreach ($objectList as $objectInfo) {
                     $object['Prefix'] = $dirname;
@@ -778,24 +824,251 @@ class OssAdapter extends AbstractAdapter
     /**
      * normalize file info.
      *
+     * @param array $stats
+     *
      * @return array
      */
-    protected function normalizeFileInfo(array $stats)
+    protected function normalizeFileInfo(array $stats, $isFetchApi = true)
     {
         $filePath = ltrim($stats['Key'], '/');
 
-        $meta = $this->getMetadata($filePath) ?? [];
-
-        if (empty($meta)) {
-            return [];
+        if ($isFetchApi) {
+            $meta = $this->getMetadata($filePath) ?? [];
+            if (empty($meta)) {
+                return [];
+            } else {
+                return [
+                    'type' => 'file',
+                    'mimetype' => $meta['content-type'],
+                    'path' => $filePath,
+                    'timestamp' => $meta['info']['filetime'],
+                    'size' => $meta['content-length'],
+                ];
+            }
         }
-
         return [
             'type' => 'file',
-            'mimetype' => $meta['content-type'],
+            'mimetype' => $this->getMime(data_get(pathinfo($filePath), 'extension')),
             'path' => $filePath,
-            'timestamp' => $meta['info']['filetime'],
-            'size' => $meta['content-length'],
+            'timestamp' => Carbon::create(data_get($stats, 'LastModified'))->timestamp,
+            'size' => data_get($stats, 'Size'),
         ];
+    }
+    protected function getMime($ext)
+    {
+        $ext = strtolower($ext);
+        if (!(strpos($ext, '.') !== false)) {
+            $ext = '.' . $ext;
+        }
+
+        switch ($ext) {
+            case '.aac':
+                $mime = 'audio/aac';
+                break; // AAC audio
+            case '.abw':
+                $mime = 'application/x-abiword';
+                break; // AbiWord document
+            case '.arc':
+                $mime = 'application/octet-stream';
+                break; // Archive document (multiple files embedded)
+            case '.avi':
+                $mime = 'video/x-msvideo';
+                break; // AVI: Audio Video Interleave
+            case '.azw':
+                $mime = 'application/vnd.amazon.ebook';
+                break; // Amazon Kindle eBook format
+            case '.bin':
+                $mime = 'application/octet-stream';
+                break; // Any kind of binary data
+            case '.bmp':
+                $mime = 'image/bmp';
+                break; // Windows OS/2 Bitmap Graphics
+            case '.bz':
+                $mime = 'application/x-bzip';
+                break; // BZip archive
+            case '.bz2':
+                $mime = 'application/x-bzip2';
+                break; // BZip2 archive
+            case '.csh':
+                $mime = 'application/x-csh';
+                break; // C-Shell script
+            case '.css':
+                $mime = 'text/css';
+                break; // Cascading Style Sheets (CSS)
+            case '.csv':
+                $mime = 'text/csv';
+                break; // Comma-separated values (CSV)
+            case '.doc':
+                $mime = 'application/msword';
+                break; // Microsoft Word
+            case '.docx':
+                $mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                break; // Microsoft Word (OpenXML)
+            case '.eot':
+                $mime = 'application/vnd.ms-fontobject';
+                break; // MS Embedded OpenType fonts
+            case '.epub':
+                $mime = 'application/epub+zip';
+                break; // Electronic publication (EPUB)
+            case '.gif':
+                $mime = 'image/gif';
+                break; // Graphics Interchange Format (GIF)
+            case '.htm':
+                $mime = 'text/html';
+                break; // HyperText Markup Language (HTML)
+            case '.html':
+                $mime = 'text/html';
+                break; // HyperText Markup Language (HTML)
+            case '.ico':
+                $mime = 'image/x-icon';
+                break; // Icon format
+            case '.ics':
+                $mime = 'text/calendar';
+                break; // iCalendar format
+            case '.jar':
+                $mime = 'application/java-archive';
+                break; // Java Archive (JAR)
+            case '.jpeg':
+                $mime = 'image/jpeg';
+                break; // JPEG images
+            case '.jpg':
+                $mime = 'image/jpeg';
+                break; // JPEG images
+            case '.js':
+                $mime = 'application/javascript';
+                break; // JavaScript (IANA Specification) (RFC 4329 Section 8.2)
+            case '.json':
+                $mime = 'application/json';
+                break; // JSON format
+            case '.mid':
+                $mime = 'audio/midi audio/x-midi';
+                break; // Musical Instrument Digital Interface (MIDI)
+            case '.midi':
+                $mime = 'audio/midi audio/x-midi';
+                break; // Musical Instrument Digital Interface (MIDI)
+            case '.mpeg':
+                $mime = 'video/mpeg';
+                break; // MPEG Video
+            case '.mpkg':
+                $mime = 'application/vnd.apple.installer+xml';
+                break; // Apple Installer Package
+            case '.odp':
+                $mime = 'application/vnd.oasis.opendocument.presentation';
+                break; // OpenDocument presentation document
+            case '.ods':
+                $mime = 'application/vnd.oasis.opendocument.spreadsheet';
+                break; // OpenDocument spreadsheet document
+            case '.odt':
+                $mime = 'application/vnd.oasis.opendocument.text';
+                break; // OpenDocument text document
+            case '.oga':
+                $mime = 'audio/ogg';
+                break; // OGG audio
+            case '.ogv':
+                $mime = 'video/ogg';
+                break; // OGG video
+            case '.ogx':
+                $mime = 'application/ogg';
+                break; // OGG
+            case '.otf':
+                $mime = 'font/otf';
+                break; // OpenType font
+            case '.png':
+                $mime = 'image/png';
+                break; // Portable Network Graphics
+            case '.pdf':
+                $mime = 'application/pdf';
+                break; // Adobe Portable Document Format (PDF)
+            case '.ppt':
+                $mime = 'application/vnd.ms-powerpoint';
+                break; // Microsoft PowerPoint
+            case '.pptx':
+                $mime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                break; // Microsoft PowerPoint (OpenXML)
+            case '.rar':
+                $mime = 'application/x-rar-compressed';
+                break; // RAR archive
+            case '.rtf':
+                $mime = 'application/rtf';
+                break; // Rich Text Format (RTF)
+            case '.sh':
+                $mime = 'application/x-sh';
+                break; // Bourne shell script
+            case '.svg':
+                $mime = 'image/svg+xml';
+                break; // Scalable Vector Graphics (SVG)
+            case '.swf':
+                $mime = 'application/x-shockwave-flash';
+                break; // Small web format (SWF) or Adobe Flash document
+            case '.tar':
+                $mime = 'application/x-tar';
+                break; // Tape Archive (TAR)
+            case '.tif':
+                $mime = 'image/tiff';
+                break; // Tagged Image File Format (TIFF)
+            case '.tiff':
+                $mime = 'image/tiff';
+                break; // Tagged Image File Format (TIFF)
+            case '.ts':
+                $mime = 'application/typescript';
+                break; // Typescript file
+            case '.ttf':
+                $mime = 'font/ttf';
+                break; // TrueType Font
+            case '.txt':
+                $mime = 'text/plain';
+                break; // Text, (generally ASCII or ISO 8859-n)
+            case '.vsd':
+                $mime = 'application/vnd.visio';
+                break; // Microsoft Visio
+            case '.wav':
+                $mime = 'audio/wav';
+                break; // Waveform Audio Format
+            case '.weba':
+                $mime = 'audio/webm';
+                break; // WEBM audio
+            case '.webm':
+                $mime = 'video/webm';
+                break; // WEBM video
+            case '.webp':
+                $mime = 'image/webp';
+                break; // WEBP image
+            case '.woff':
+                $mime = 'font/woff';
+                break; // Web Open Font Format (WOFF)
+            case '.woff2':
+                $mime = 'font/woff2';
+                break; // Web Open Font Format (WOFF)
+            case '.xhtml':
+                $mime = 'application/xhtml+xml';
+                break; // XHTML
+            case '.xls':
+                $mime = 'application/vnd.ms-excel';
+                break; // Microsoft Excel
+            case '.xlsx':
+                $mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                break; // Microsoft Excel (OpenXML)
+            case '.xml':
+                $mime = 'application/xml';
+                break; // XML
+            case '.xul':
+                $mime = 'application/vnd.mozilla.xul+xml';
+                break; // XUL
+            case '.zip':
+                $mime = 'application/zip';
+                break; // ZIP archive
+            case '.3gp':
+                $mime = 'video/3gpp';
+                break; // 3GPP audio/video container
+            case '.3g2':
+                $mime = 'video/3gpp2';
+                break; // 3GPP2 audio/video container
+            case '.7z':
+                $mime = 'application/x-7z-compressed';
+                break; // 7-zip archive
+            default:
+                $mime = 'application/octet-stream'; // general purpose MIME-type
+        }
+        return $mime;
     }
 }

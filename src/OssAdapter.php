@@ -365,7 +365,7 @@ class OssAdapter implements FilesystemAdapter
      *
      * @return false|\OSS\Http\ResponseCore|string
      */
-    public function signUrl($path, $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET)
+    public function getTemporaryUrl($path, $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET)
     {
         $path = $this->prefixer->prefixPath($path);
 

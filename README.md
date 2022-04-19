@@ -99,9 +99,9 @@ string $adapter->getUrl('file.md');
 
 // url 访问有效期 & 图片处理「$timeout 为多少秒过期」
 // 默认GET
-string $adapter->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
+string $adapter->getTemporaryUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
 // PUT
-string $adapter->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100'],'PUT');
+string $adapter->getTemporaryUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100'],'PUT');
 
 // 多个bucket切换
 $adapter->bucket('test')->has('file.md');

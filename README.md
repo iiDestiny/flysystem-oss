@@ -28,7 +28,7 @@
 ## 安装命令
 
 ```shell
-$ composer require "iidestiny/flysystem-oss:^3" -vvv
+$ composer require "iidestiny/flysystem-oss:^4" -vvv
 ```
 
 ## 使用

@@ -20,9 +20,6 @@ use OSS\Core\OssException;
 use OSS\OssClient;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemAdapter;
-use League\Flysystem\FilesystemException;
-use League\Flysystem\InvalidVisibilityProvided;
-use League\Flysystem\StorageAttributes;
 use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToCreateDirectory;
 use League\Flysystem\UnableToDeleteDirectory;
@@ -43,18 +40,16 @@ class OssAdapter implements FilesystemAdapter
     use SignatureTrait;
 
     // 系统参数
-    /**
-     *
-     */
+
     const SYSTEM_FIELD = [
-        'bucket'   => '${bucket}',
-        'etag'     => '${etag}',
+        'bucket' => '${bucket}',
+        'etag' => '${etag}',
         'filename' => '${object}',
-        'size'     => '${size}',
+        'size' => '${size}',
         'mimeType' => '${mimeType}',
-        'height'   => '${imageInfo.height}',
-        'width'    => '${imageInfo.width}',
-        'format'   => '${imageInfo.format}',
+        'height' => '${imageInfo.height}',
+        'width' => '${imageInfo.width}',
+        'format' => '${imageInfo.format}',
     ];
 
     /**
@@ -113,14 +108,11 @@ class OssAdapter implements FilesystemAdapter
     protected $prefixer;
 
     /**
-     * @param        $accessKeyId
-     * @param        $accessKeySecret
-     * @param        $endpoint
-     * @param        $bucket
-     * @param bool   $isCName
-     * @param string $prefix
-     * @param array  $buckets
-     * @param        ...$params
+     * @param $accessKeyId
+     * @param $accessKeySecret
+     * @param $endpoint
+     * @param $bucket
+     * @param ...$params
      *
      * @throws OssException
      */
@@ -140,17 +132,12 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * 设置cdn的url.
-     *
-     * @param string|null $url
      */
     public function setCdnUrl(?string $url)
     {
         $this->cdnUrl = $url;
     }
 
-    /**
-     * @return OssClient
-     */
     public function ossKernel(): OssClient
     {
         return $this->getClient();
@@ -162,6 +149,7 @@ class OssAdapter implements FilesystemAdapter
      * @param $bucket
      *
      * @return $this
+     *
      * @throws OssException
      * @throws \Exception
      */
@@ -196,8 +184,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * get ali sdk kernel class.
-     *
-     * @return OssClient
      */
     public function getClient(): OssClient
     {
@@ -206,8 +192,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * 验签.
-     *
-     * @return array
      */
     public function verify(): array
     {
@@ -249,9 +233,9 @@ class OssAdapter implements FilesystemAdapter
         $path = $_SERVER['REQUEST_URI'];
         $pos = strpos($path, '?');
         if (false === $pos) {
-            $authStr = urldecode($path) . "\n" . $body;
+            $authStr = urldecode($path)."\n".$body;
         } else {
-            $authStr = urldecode(substr($path, 0, $pos)) . substr($path, $pos, strlen($path) - $pos) . "\n" . $body;
+            $authStr = urldecode(substr($path, 0, $pos)).substr($path, $pos, strlen($path) - $pos)."\n".$body;
         }
         // 验证签名
         $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
@@ -268,12 +252,7 @@ class OssAdapter implements FilesystemAdapter
     /**
      * oss 直传配置.
      *
-     * @param string $prefix
-     * @param null   $callBackUrl
-     * @param array  $customData
-     * @param int    $expire
-     * @param int    $contentLengthRangeValue
-     * @param array  $systemData
+     * @param null $callBackUrl
      *
      * @return false|string
      *
@@ -301,14 +280,14 @@ class OssAdapter implements FilesystemAdapter
         $data = [];
         if (!empty($customData)) {
             foreach ($customData as $key => $value) {
-                $callbackVar['x:' . $key] = $value;
-                $data[$key] = '${x:' . $key . '}';
+                $callbackVar['x:'.$key] = $value;
+                $data[$key] = '${x:'.$key.'}';
             }
         }
 
         $callbackParam = [
-            'callbackUrl'      => $callBackUrl,
-            'callbackBody'     => urldecode(http_build_query(array_merge($system, $data))),
+            'callbackUrl' => $callBackUrl,
+            'callbackBody' => urldecode(http_build_query(array_merge($system, $data))),
             'callbackBodyType' => 'application/x-www-form-urlencoded',
         ];
         $callbackString = json_encode($callbackParam);
@@ -356,12 +335,10 @@ class OssAdapter implements FilesystemAdapter
     }
 
     /**
-     * sign url
+     * sign url.
      *
-     * @param        $path
-     * @param        $timeout
-     * @param array  $options
-     * @param string $method
+     * @param $path
+     * @param $timeout
      *
      * @return false|\OSS\Http\ResponseCore|string
      */
@@ -378,13 +355,6 @@ class OssAdapter implements FilesystemAdapter
         return $path;
     }
 
-    /**
-     * @param string $path
-     * @param string $contents
-     * @param Config $config
-     *
-     * @return void
-     */
     public function write(string $path, string $contents, Config $config): void
     {
         $path = $this->prefixer->prefixPath($path);
@@ -400,11 +370,7 @@ class OssAdapter implements FilesystemAdapter
     /**
      * Write a new file using a stream.
      *
-     * @param string $path
-     * @param        $contents
-     * @param Config $config
-     *
-     * @return void
+     * @param $contents
      */
     public function writeStream(string $path, $contents, Config $config): void
     {
@@ -418,13 +384,6 @@ class OssAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * @param string $source
-     * @param string $destination
-     * @param Config $config
-     *
-     * @return void
-     */
     public function move(string $source, string $destination, Config $config): void
     {
         try {
@@ -435,13 +394,6 @@ class OssAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * @param string $source
-     * @param string $destination
-     * @param Config $config
-     *
-     * @return void
-     */
     public function copy(string $source, string $destination, Config $config): void
     {
         $path = $this->prefixer->prefixPath($source);
@@ -456,10 +408,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * delete a file.
-     *
-     * @param string $path
-     *
-     * @return void
      */
     public function delete(string $path): void
     {
@@ -473,9 +421,6 @@ class OssAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param string $path
-     *
-     * @return void
      * @throws OssException
      */
     public function deleteDirectory(string $path): void
@@ -489,7 +434,7 @@ class OssAdapter implements FilesystemAdapter
                     continue;
                 }
                 $files[] = $this->prefixer->prefixPath($content->path());
-                if ($i && $i % 100 == 0) {
+                if ($i && 0 == $i % 100) {
                     $this->client->deleteObjects($this->bucket, $files);
                     $files = [];
                 }
@@ -501,12 +446,6 @@ class OssAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * @param string $path
-     * @param Config $config
-     *
-     * @return void
-     */
     public function createDirectory(string $path, Config $config): void
     {
         try {
@@ -518,9 +457,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * visibility.
-     *
-     * @param string $path
-     * @param string $visibility
      *
      * @return array|bool|false
      */
@@ -537,11 +473,6 @@ class OssAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * @param string $path
-     *
-     * @return FileAttributes
-     */
     public function visibility(string $path): FileAttributes
     {
         try {
@@ -550,13 +481,11 @@ class OssAdapter implements FilesystemAdapter
             throw UnableToRetrieveMetadata::visibility($path, $exception->getMessage());
         }
 
-        return new FileAttributes($path, null, $acl === OssClient::OSS_ACL_TYPE_PRIVATE ? Visibility::PRIVATE : Visibility::PUBLIC);
+        return new FileAttributes($path, null, OssClient::OSS_ACL_TYPE_PRIVATE === $acl ? Visibility::PRIVATE : Visibility::PUBLIC);
     }
 
     /**
      * Check whether a file exists.
-     *
-     * @param string $path
      *
      * @return array|bool|null
      */
@@ -569,28 +498,20 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * Get resource url.
-     *
-     * @param string $path
-     *
-     * @return string
      */
     public function getUrl(string $path): string
     {
         $path = $this->prefixer->prefixPath($path);
 
         if (!is_null($this->cdnUrl)) {
-            return rtrim($this->cdnUrl, '/') . '/' . ltrim($path, '/');
+            return rtrim($this->cdnUrl, '/').'/'.ltrim($path, '/');
         }
 
-        return $this->normalizeHost() . ltrim($path, '/');
+        return $this->normalizeHost().ltrim($path, '/');
     }
 
     /**
      * read a file.
-     *
-     * @param string $path
-     *
-     * @return string
      */
     public function read(string $path): string
     {
@@ -605,8 +526,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * read a file stream.
-     *
-     * @param string $path
      *
      * @return array|bool|false
      */
@@ -626,10 +545,6 @@ class OssAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param string $path
-     * @param bool   $deep
-     *
-     * @return iterable
      * @throws \Exception
      */
     public function listContents(string $path, bool $deep): iterable
@@ -656,7 +571,7 @@ class OssAdapter implements FilesystemAdapter
                     continue;
                 }
                 yield new DirectoryAttributes($subPath);
-                if ($deep === true) {
+                if (true === $deep) {
                     $contents = $this->listContents($subPath, $deep);
                     foreach ($contents as $content) {
                         yield $content;
@@ -669,14 +584,14 @@ class OssAdapter implements FilesystemAdapter
                 foreach ($listObject as $objectInfo) {
                     $objectPath = $this->prefixer->stripPrefix($objectInfo->getKey());
                     $objectLastModified = strtotime($objectInfo->getLastModified());
-                    if (substr($objectPath, -1, 1) == '/') {
+                    if ('/' == substr($objectPath, -1, 1)) {
                         continue;
                     }
                     yield new FileAttributes($objectPath, $objectInfo->getSize(), null, $objectLastModified);
                 }
             }
 
-            if ($listObjectInfo->getIsTruncated() !== "true") {
+            if ('true' !== $listObjectInfo->getIsTruncated()) {
                 break;
             }
         }
@@ -684,20 +599,18 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * @param $path
-     *
-     * @return FileAttributes
      */
     public function getMetadata($path): FileAttributes
     {
         try {
             $result = $this->client->getObjectMeta($this->bucket, $this->prefixer->prefixPath($path));
         } catch (OssException $exception) {
-            throw UnableToRetrieveMetadata::create($path, "metadata", $exception->getErrorCode(), $exception);
+            throw UnableToRetrieveMetadata::create($path, 'metadata', $exception->getErrorCode(), $exception);
         }
 
-        $size = isset($result["content-length"]) ? intval($result["content-length"]) : 0;
-        $timestamp = isset($result["last-modified"]) ? strtotime($result["last-modified"]) : 0;
-        $mimetype = $result["content-type"] ?? "";
+        $size = isset($result['content-length']) ? intval($result['content-length']) : 0;
+        $timestamp = isset($result['last-modified']) ? strtotime($result['last-modified']) : 0;
+        $mimetype = $result['content-type'] ?? '';
 
         return new FileAttributes($path, $size, null, $timestamp, $mimetype);
     }
@@ -705,30 +618,27 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get the size of file.
      *
-     * @param string $path
-     *
      * @return array|false
      */
     public function fileSize(string $path): FileAttributes
     {
         $meta = $this->getMetadata($path);
-        if ($meta->fileSize() === null) {
+        if (null === $meta->fileSize()) {
             throw UnableToRetrieveMetadata::fileSize($path);
         }
+
         return $meta;
     }
 
     /**
      * get mime type.
      *
-     * @param string $path
-     *
      * @return array|false
      */
     public function mimeType(string $path): FileAttributes
     {
         $meta = $this->getMetadata($path);
-        if ($meta->mimeType() === null) {
+        if (null === $meta->mimeType()) {
             throw UnableToRetrieveMetadata::mimeType($path);
         }
 
@@ -738,30 +648,27 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get timestamp.
      *
-     * @param string $path
-     *
      * @return array|false
      */
     public function lastModified(string $path): FileAttributes
     {
         $meta = $this->getMetadata($path);
-        if ($meta->lastModified() === null) {
+        if (null === $meta->lastModified()) {
             throw UnableToRetrieveMetadata::lastModified($path);
         }
+
         return $meta;
     }
 
     /**
      * normalize Host.
-     *
-     * @return string
      */
     protected function normalizeHost(): string
     {
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket . '.' . $this->endpoint;
+            $domain = $this->bucket.'.'.$this->endpoint;
         }
 
         if ($this->useSSL) {
@@ -770,7 +677,7 @@ class OssAdapter implements FilesystemAdapter
             $domain = "http://{$domain}";
         }
 
-        return rtrim($domain, '/') . '/';
+        return rtrim($domain, '/').'/';
     }
 
     /**

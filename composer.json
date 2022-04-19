@@ -18,10 +18,9 @@
         "ext-openssl": "*",
         "ext-curl": "*",
         "ext-json": "*",
-        "php": "^7.0 || ^8.0",
-        "league/flysystem": "^1.0",
-        "aliyuncs/oss-sdk-php": "^2.4",
-        "nesbot/carbon": "^1.24.1 || ^2.0"
+        "php": ">=7.2",
+        "league/flysystem": "^2.0",
+        "aliyuncs/oss-sdk-php": "^2.4"
     },
     "autoload": {
         "psr-4": {

@@ -28,7 +28,7 @@
 ## 安装命令
 
 ```shell
-$ composer require "iidestiny/flysystem-oss" -vvv
+$ composer require "iidestiny/flysystem-oss:^2" -vvv
 ```
 
 ## 使用
@@ -56,73 +56,55 @@ $flysystem = new Filesystem($adapter);
 ## 常用方法
 
 ```php
-bool $flysystem->write('file.md', 'contents');
+void $flysystem->write('file.md', 'contents');
 
-bool $flysystem->write('file.md', 'http://httpbin.org/robots.txt', ['options' => ['xxxxx' => 'application/redirect302']]);
+void $flysystem->write('file.md', 'http://httpbin.org/robots.txt', ['options' => ['xxxxx' => 'application/redirect302']]);
 
-bool $flysystem->writeStream('file.md', fopen('path/to/your/local/file.jpg', 'r'));
+void $flysystem->writeStream('file.md', fopen('path/to/your/local/file.jpg', 'r'));
 
-bool $flysystem->update('file.md', 'new contents');
+void $flysystem->move('foo.md', 'bar.md');
 
-bool $flysystem->updateStream('file.md', fopen('path/to/your/local/file.jpg', 'r'));
+void $flysystem->copy('foo.md', 'foo2.md');
 
-bool $flysystem->rename('foo.md', 'bar.md');
+void $flysystem->delete('file.md');
 
-bool $flysystem->copy('foo.md', 'foo2.md');
+void $flysystem->deleteDirectory('file.md');
 
-bool $flysystem->delete('file.md');
+bool $flysystem->fileExists('file.md');
 
-bool $flysystem->has('file.md');
-
-string|false $flysystem->read('file.md');
+ $flysystem->read('file.md');
 
 array $flysystem->listContents();
 
 array $flysystem->getMetadata('file.md');
 
-int $flysystem->getSize('file.md');
+int $flysystem->fileSize('file.md');
 
-string $flysystem->getAdapter()->getUrl('file.md');
+string $adapter->getUrl('file.md'); // 
 
-string $flysystem->getMimetype('file.md');
+string $flysystem->mimeType('file.md');
 
-int $flysystem->getTimestamp('file.md');
+int $flysystem->lastModified('file.md');
 ```
 
 ## 插件扩展
 
+从 `filesystem v2` 版本开始插件功能被移除，所以要使用这些功能需要引用创建 `Adapter` 适配器，以下所有案例都是以前插件功能
+
 ```php
-use Iidestiny\Flysystem\Oss\Plugins\FileUrl;
-use Iidestiny\Flysystem\Oss\Plugins\SignUrl;
-use Iidestiny\Flysystem\Oss\Plugins\TemporaryUrl;
-use Iidestiny\Flysystem\Oss\Plugins\SetBucket;
+$adapter = new OssAdapter($accessKeyId, $accessKeySecret, $endpoint, $bucket, $isCName, $prefix);
 
 // 获取 oss 资源访问链接
-$flysystem->addPlugin(new FileUrl());
-
-string $flysystem->getUrl('file.md');
+string $adapter->getUrl('file.md');
 
 // url 访问有效期 & 图片处理「$timeout 为多少秒过期」
-$flysystem->addPlugin(new SignUrl());
-
 // 默认GET
-string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
-
-// PUT方式
-string $flysystem->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100'],'PUT');
-
- // url 访问有效期「$expiration 为未来时间 2019-05-05 17:50:32」
-$flysystem->addPlugin(new TemporaryUrl());
-
-// 默认GET
-string $flysystem->getTemporaryUrl('file.md', $expiration);
-
-// PUT方式
-string $flysystem->getTemporaryUrl('file.md', $expiration,[],'PUT');
+string $adapter->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100']);
+// PUT
+string $adapter->signUrl('file.md', $timeout, ['x-oss-process' => 'image/circle,r_100'],'PUT');
 
 // 多个bucket切换
-$flysystem->addPlugin(new SetBucket());
-$flysystem->bucket('test')->has('file.md');
+$adapter->bucket('test')->has('file.md');
 ```
 
 ## 获取官方完整 OSS 处理能力
@@ -131,10 +113,7 @@ $flysystem->bucket('test')->has('file.md');
 然后你将拥有完整的 oss 处理能力
 
 ```php
-use Iidestiny\Flysystem\Oss\Plugins\Kernel;
-
-$flysystem->addPlugin(new Kernel());
-$kernel = $flysystem->kernel();
+$kernel = $adapter->ossKernel();
 
 // 例如：防盗链功能
 $refererConfig = new RefererConfig();
@@ -154,9 +133,6 @@ $kernel->putBucketReferer($bucket, $refererConfig);
 oss 直传有三种方式，当前扩展包使用的是最完整的 [服务端签名直传并设置上传回调](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 方式，**扩展包只生成前端页面上传所需的签名参数**，前端上传实现可参考 [官方文档中的实例](https://help.aliyun.com/document_detail/31927.html?spm=a2c4g.11186623.2.10.5602668eApjlz3#concept-qp2-g4y-5db) 或自行搜索
 
 ```php
-use Iidestiny\Flysystem\Oss\Plugins\SignatureConfig;
-
-$flysystem->addPlugin(new SignatureConfig());
 
 /**
  * 1. 前缀如：'images/'
@@ -166,7 +142,7 @@ $flysystem->addPlugin(new SignatureConfig());
  * 5. 文件大小限制
  * 6. 回调系统参数, 默认值: Iidestiny\Flysystem\Oss\OssAdapter::SYSTEM_FIELD
  */
-object $flysystem->signatureConfig($prefix = '/', $callBackUrl = '', $customData = [], $expire = 30, $maxSize = 1024 * 1024 * 2, $systemData = ['etag' => '${etag}', 'filename' => '${object}']);
+$adapter->signatureConfig($prefix = '/', $callBackUrl = '', $customData = [], $expire = 30, $maxSize = 1024 * 1024 * 2, $systemData = ['etag' => '${etag}', 'filename' => '${object}']);
 ```
 
 ## 直传回调验签
@@ -178,11 +154,7 @@ object $flysystem->signatureConfig($prefix = '/', $callBackUrl = '', $customData
 - 以 apache 为例，修改 httpd.conf 在 DirectoryIndex index.php 这行下面增加「RewriteEngine On」「RewriteRule .* - [env=HTTP_AUTHORIZATION:%{HTTP:Authorization},last]」
 
 ```php
-use Iidestiny\Flysystem\Oss\Plugins\Verify;
-
-$flysystem->addPlugin(new Verify());
-
-list($verify, $data) = $flysystem->verify();
+list($verify, $data) = $adapter->verify();
 // [$verify, $data] = $flysystem->verify(); // php 7.1 +
 
 if (!$verify) {

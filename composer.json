@@ -28,8 +28,8 @@
         }
     },
     "require-dev": {
-        "mockery/mockery": "^1.2",
-        "phpunit/phpunit": "^6.5",
+        "mockery/mockery": "^1.5",
+        "phpunit/phpunit": "^9.5",
         "symfony/var-dumper": "^3.4"
     }
 }

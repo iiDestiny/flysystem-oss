@@ -496,11 +496,6 @@ class OssAdapter implements FilesystemAdapter
         return $this->client->doesObjectExist($this->bucket, $path);
     }
 
-    /**
-     * @param string $path
-     *
-     * @return bool
-     */
     public function directoryExists(string $path): bool
     {
         return $this->client->doesObjectExist($this->bucket, $this->prefixer->prefixDirectoryPath($path));

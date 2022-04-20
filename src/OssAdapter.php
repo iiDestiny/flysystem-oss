@@ -497,6 +497,16 @@ class OssAdapter implements FilesystemAdapter
     }
 
     /**
+     * @param string $path
+     *
+     * @return bool
+     */
+    public function directoryExists(string $path): bool
+    {
+        return $this->client->doesObjectExist($this->bucket, $this->prefixer->prefixDirectoryPath($path));
+    }
+
+    /**
      * Get resource url.
      */
     public function getUrl(string $path): string

@@ -52,29 +52,14 @@ class OssAdapter implements FilesystemAdapter
         'format' => '${imageInfo.format}',
     ];
 
-    /**
-     * @var
-     */
     protected $accessKeyId;
 
-    /**
-     * @var
-     */
     protected $accessKeySecret;
 
-    /**
-     * @var
-     */
     protected $endpoint;
 
-    /**
-     * @var
-     */
     protected $bucket;
 
-    /**
-     * @var
-     */
     protected $isCName;
 
     /**
@@ -108,12 +93,6 @@ class OssAdapter implements FilesystemAdapter
     protected $prefixer;
 
     /**
-     * @param $accessKeyId
-     * @param $accessKeySecret
-     * @param $endpoint
-     * @param $bucket
-     * @param ...$params
-     *
      * @throws OssException
      */
     public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, bool $isCName = false, string $prefix = '', array $buckets = [], ...$params)
@@ -145,8 +124,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * 调用不同的桶配置.
-     *
-     * @param $bucket
      *
      * @return $this
      *
@@ -337,9 +314,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * sign url.
      *
-     * @param $path
-     * @param $timeout
-     *
      * @return false|\OSS\Http\ResponseCore|string
      */
     public function getTemporaryUrl($path, $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET)
@@ -369,8 +343,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * Write a new file using a stream.
-     *
-     * @param $contents
      */
     public function writeStream(string $path, $contents, Config $config): void
     {
@@ -602,9 +574,6 @@ class OssAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * @param $path
-     */
     public function getMetadata($path): FileAttributes
     {
         try {

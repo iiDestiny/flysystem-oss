@@ -16,8 +16,6 @@ trait SignatureTrait
     /**
      * gmt.
      *
-     * @param $time
-     *
      * @return string
      *
      * @throws \Exception

@@ -378,7 +378,7 @@ class OssAdapter implements FilesystemAdapter
         $options = $config->get('options', []);
 
         try {
-            $this->client->uploadStream($this->bucket, $this->prefixer->prefixPath($path), $contents, $options);
+            $this->client->uploadStream($this->bucket, $path, $contents, $options);
         } catch (OssException $exception) {
             throw UnableToWriteFile::atLocation($path, $exception->getErrorCode(), $exception);
         }

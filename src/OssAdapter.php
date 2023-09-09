@@ -246,7 +246,7 @@ class OssAdapter implements FilesystemAdapter
         } else {
             foreach ($systemData as $key => $value) {
                 if (!in_array($value, self::SYSTEM_FIELD)) {
-                    throw new \InvalidArgumentException("Invalid oss system filed: ${value}");
+                    throw new \InvalidArgumentException("Invalid oss system filed: {$value}");
                 }
                 $system[$key] = $value;
             }

@@ -235,7 +235,7 @@ class OssAdapter implements FilesystemAdapter
      *
      * @throws \Exception
      */
-    public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, int $contentLengthRangeValue = 1048576000, array $systemData = [])
+    public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, int $contentLengthRangeValue = 1048576000, array $systemData = [], array $policyData = [])
     {
         $prefix = $this->prefixer->prefixPath($prefix);
 
@@ -291,7 +291,7 @@ class OssAdapter implements FilesystemAdapter
 
         $arr = [
             'expiration' => $expiration,
-            'conditions' => $conditions,
+            'conditions' => array_merge($conditions, $policyData) // 将自定义policy参数一起合并
         ];
         $policy = json_encode($arr);
         $base64Policy = base64_encode($policy);

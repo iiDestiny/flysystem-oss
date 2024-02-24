@@ -291,7 +291,7 @@ class OssAdapter implements FilesystemAdapter
 
         $arr = [
             'expiration' => $expiration,
-            'conditions' => array_merge($conditions, $policyData) // 将自定义policy参数一起合并
+            'conditions' => array_merge($conditions, $policyData), // 将自定义policy参数一起合并
         ];
         $policy = json_encode($arr);
         $base64Policy = base64_encode($policy);

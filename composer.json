@@ -20,7 +20,7 @@
         "ext-json": "*",
         "php": "^8.0.2",
         "league/flysystem": "^3.0",
-        "aliyuncs/oss-sdk-php": "^2.4"
+        "aliyuncs/oss-sdk-php": "^2"
     },
     "autoload": {
         "psr-4": {

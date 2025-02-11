@@ -182,7 +182,7 @@ class OssAdapter implements FilesystemAdapter
             $config['endpoint'] ?? $this->endpoint,
             $config['bucket'],
             $config['isCName'] ?? false,
-            $config['prefix'] ?? '',
+            $config['root'] ?? '',
             [],
             ...$extra);
 

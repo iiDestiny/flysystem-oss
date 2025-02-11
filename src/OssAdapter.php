@@ -282,17 +282,18 @@ class OssAdapter implements FilesystemAdapter
     /**
      * oss 直传配置.
      *
-     * @param string $prefix
-     * @param null $callBackUrl
-     * @param array $customData
-     * @param int $expire
-     * @param int $contentLengthRangeValue
-     * @param array $systemData
-     * @param array $policyData
+     * @param string $prefix 目录前缀
+     * @param null $callBackUrl 回调地址
+     * @param array $customData 自定义参数
+     * @param int $expire 过期时间（秒）
+     * @param array $systemData 系统接收参数，回调时会返回
+     * @param array $policyData 自定义 policy 参数
+     *                          see: https://help.aliyun.com/zh/oss/developer-reference/postobject#section-d5z-1ww-wdb
      * @return string
      * @throws \JsonException|\InvalidArgumentException|\DateMalformedStringException
+     * @see https://help.aliyun.com/zh/oss/use-cases/overview-20
      */
-    public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, int $contentLengthRangeValue = 1048576000, array $systemData = [], array $policyData = []): string
+    public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, array $systemData = [], array $policyData = []): string
     {
         $prefix = $this->prefixer->prefixPath($prefix);
 
@@ -331,20 +332,27 @@ class OssAdapter implements FilesystemAdapter
         $end = $now + $expire;
         $expiration = $this->gmt_iso8601($end);
 
-        // 最大文件大小.用户可以自己设置
-        $condition = [
-            0 => 'content-length-range',
-            1 => 0,
-            2 => $contentLengthRangeValue,
-        ];
-        $conditions[] = $condition;
-
-        $start = [
+        // 如果用户没有设置文件大小，需要设置默认值
+        $hasContentLengthRange = false;
+        foreach ($policyData as $item) {
+            if (isset($item[0]) && $item[0] === 'content-length-range') {
+                $hasContentLengthRange = true;
+                break;
+            }
+        }
+        if (!$hasContentLengthRange) {
+            $condition = [
+                0 => 'content-length-range',
+                1 => 0, // min: 0
+                2 => 1048576000, // max: 1GB
+            ];
+            $conditions[] = $condition;
+        }
+        $conditions[] = [
             0 => 'starts-with',
             1 => '$key',
             2 => $prefix,
         ];
-        $conditions[] = $start;
 
         $arr = [
             'expiration' => $expiration,

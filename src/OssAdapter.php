@@ -334,15 +334,16 @@ class OssAdapter implements FilesystemAdapter
 
         // 如果用户没有设置文件大小，需要设置默认值
         $hasContentLengthRange = false;
+        $contentLengthRangeKey = 'content-length-range';
         foreach ($policyData as $item) {
-            if (isset($item[0]) && $item[0] === 'content-length-range') {
+            if (isset($item[0]) && $item[0] === $contentLengthRangeKey) {
                 $hasContentLengthRange = true;
                 break;
             }
         }
         if (!$hasContentLengthRange) {
             $condition = [
-                0 => 'content-length-range',
+                0 => $contentLengthRangeKey,
                 1 => 0, // min: 0
                 2 => 1048576000, // max: 1GB
             ];

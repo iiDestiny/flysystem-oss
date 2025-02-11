@@ -12,3 +12,6 @@ coverage.clover
 ocular.phar
 images
 callback.php
+
+## test
+.phpunit.result.cache

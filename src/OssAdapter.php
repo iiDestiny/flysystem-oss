@@ -17,6 +17,7 @@ use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\PathPrefixer;
 use League\Flysystem\Visibility;
 use OSS\Core\OssException;
+use OSS\Credentials\StaticCredentialsProvider;
 use OSS\OssClient;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemAdapter;
@@ -41,15 +42,15 @@ class OssAdapter implements FilesystemAdapter
 
     // 系统参数
 
-    const SYSTEM_FIELD = [
-        'bucket' => '${bucket}',
-        'etag' => '${etag}',
+    public const SYSTEM_FIELD = [
+        'bucket'   => '${bucket}',
+        'etag'     => '${etag}',
         'filename' => '${object}',
-        'size' => '${size}',
+        'size'     => '${size}',
         'mimeType' => '${mimeType}',
-        'height' => '${imageInfo.height}',
-        'width' => '${imageInfo.width}',
-        'format' => '${imageInfo.format}',
+        'height'   => '${imageInfo.height}',
+        'width'    => '${imageInfo.width}',
+        'format'   => '${imageInfo.format}',
     ];
 
     protected $accessKeyId;
@@ -58,14 +59,19 @@ class OssAdapter implements FilesystemAdapter
 
     protected $endpoint;
 
-    protected $bucket;
+    protected string $bucketName = '';
 
     protected $isCName;
 
     /**
-     * @var array
+     * @var array<string, array>
      */
-    protected $buckets;
+    protected array $buckets = [];
+
+    /**
+     * @var array<string, OssAdapter>
+     */
+    protected array $bucketAdapters = [];
 
     /**
      * @var OssClient
@@ -73,7 +79,7 @@ class OssAdapter implements FilesystemAdapter
     protected $client;
 
     /**
-     * @var array|mixed[]
+     * @var array
      */
     protected $params;
 
@@ -85,36 +91,56 @@ class OssAdapter implements FilesystemAdapter
     /**
      * @var string|null
      */
-    protected $cdnUrl = null;
+    protected ?string $cdnUrl = null;
 
     /**
      * @var PathPrefixer
      */
     protected $prefixer;
 
-    /**
-     * @throws OssException
-     */
     public function __construct($accessKeyId, $accessKeySecret, $endpoint, $bucket, bool $isCName = false, string $prefix = '', array $buckets = [], ...$params)
     {
         $this->accessKeyId = $accessKeyId;
         $this->accessKeySecret = $accessKeySecret;
         $this->endpoint = $endpoint;
-        $this->bucket = $bucket;
+        $this->bucketName = $bucket;
         $this->isCName = $isCName;
         $this->prefixer = new PathPrefixer($prefix, DIRECTORY_SEPARATOR);
         $this->buckets = $buckets;
         $this->params = $params;
-        $this->initClient();
-        $this->checkEndpoint();
+        $this->initDefaultBucketAdapter();
+    }
+
+    public function getBucketName(): string
+    {
+        return $this->bucketName;
     }
 
     /**
-     * 设置cdn的url.
+     * init default bucket adapter.
+     *
+     * @return \Iidestiny\Flysystem\Oss\OssAdapter
      */
-    public function setCdnUrl(?string $url)
+    protected function initDefaultBucketAdapter(): OssAdapter
+    {
+        $this->initClient()
+            ->checkEndpoint()
+            ->bucketAdapters[$this->bucketName] = $this;
+
+        return $this;
+    }
+
+    /**
+     * set cdn url.
+     *
+     * @param string|null $url
+     * @return $this
+     */
+    public function setCdnUrl(?string $url): OssAdapter
     {
         $this->cdnUrl = $url;
+
+        return $this;
     }
 
     public function ossKernel(): OssClient
@@ -123,40 +149,75 @@ class OssAdapter implements FilesystemAdapter
     }
 
     /**
-     * 调用不同的桶配置.
+     * get bucket adapter by bucket name.
      *
      * @return $this
-     *
-     * @throws OssException
-     * @throws \Exception
+     * @throws \InvalidArgumentException
      */
     public function bucket($bucket): OssAdapter
     {
+        return $this->bucketAdapters[$bucket] ?? ($this->bucketAdapters[$bucket] = $this->createBucketAdapter($bucket));
+    }
+
+    /**
+     * create bucket adapter by bucket name.
+     *
+     * @param string $bucket
+     * @return \Iidestiny\Flysystem\Oss\OssAdapter
+     * @throws \InvalidArgumentException
+     */
+    protected function createBucketAdapter(string $bucket): OssAdapter
+    {
         if (!isset($this->buckets[$bucket])) {
-            throw new \Exception('bucket is not exist.');
+            throw new \InvalidArgumentException(sprintf('Bucket "%s" does not exist.', $bucket));
         }
-        $bucketConfig = $this->buckets[$bucket];
 
-        $this->accessKeyId = $bucketConfig['access_key'];
-        $this->accessKeySecret = $bucketConfig['secret_key'];
-        $this->endpoint = $bucketConfig['endpoint'];
-        $this->bucket = $bucketConfig['bucket'];
-        $this->isCName = $bucketConfig['isCName'];
+        $config = $this->buckets[$bucket];
+        $extra = array_merge($this->params, $this->extraConfig($config));
 
-        $this->initClient();
-        $this->checkEndpoint();
+        // new bucket adapter
+        $adapter = new self(
+            $config['access_key'] ?? $this->accessKeyId,
+            $config['secret_key'] ?? $this->accessKeySecret,
+            $config['endpoint'] ?? $this->endpoint,
+            $config['bucket'],
+            $config['isCName'] ?? false,
+            $config['root'] ?? '',
+            [],
+            ...$extra);
 
-        return $this;
+        return $adapter->setCdnUrl($config['url'] ?? null)->initDefaultBucketAdapter();
+    }
+
+    /**
+     * extract extra config.
+     *
+     * @param array $config
+     * @return array
+     */
+    protected function extraConfig(array $config): array
+    {
+        return array_diff_key($config, array_flip(['driver', 'root', 'buckets', 'access_key', 'secret_key',
+            'endpoint', 'bucket', 'isCName', 'url']));
     }
 
     /**
      * init oss client.
      *
-     * @throws OssException
+     * @return $this
      */
-    protected function initClient()
+    protected function initClient(): OssAdapter
     {
-        $this->client = new OssClient($this->accessKeyId, $this->accessKeySecret, $this->endpoint, $this->isCName, ...$this->params);
+        $provider = new StaticCredentialsProvider($this->accessKeyId, $this->accessKeySecret, $this->params['securityToken'] ?? null);
+
+        $this->client = new OssClient([
+            'endpoint' => rtrim($this->endpoint, '/'),
+            'cname'    => $this->isCName,
+            'provider' => $provider,
+            ...$this->params,
+        ]);
+
+        return $this;
     }
 
     /**
@@ -172,20 +233,11 @@ class OssAdapter implements FilesystemAdapter
      */
     public function verify(): array
     {
-        // oss 前面header、公钥 header
-        $authorizationBase64 = '';
-        $pubKeyUrlBase64 = '';
-
-        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $authorizationBase64 = $_SERVER['HTTP_AUTHORIZATION'];
-        }
-
-        if (isset($_SERVER['HTTP_X_OSS_PUB_KEY_URL'])) {
-            $pubKeyUrlBase64 = $_SERVER['HTTP_X_OSS_PUB_KEY_URL'];
-        }
-
+        // oss 前面 header、公钥 header
+        $authorizationBase64 = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $pubKeyUrlBase64 = $_SERVER['HTTP_X_OSS_PUB_KEY_URL'] ?? '';
         // 验证失败
-        if ('' == $authorizationBase64 || '' == $pubKeyUrlBase64) {
+        if (empty($authorizationBase64) || empty($pubKeyUrlBase64)) {
             return [false, ['CallbackFailed' => 'authorization or pubKeyUrl is null']];
         }
 
@@ -198,9 +250,7 @@ class OssAdapter implements FilesystemAdapter
         curl_setopt($ch, CURLOPT_URL, $pubKeyUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        $pubKey = curl_exec($ch);
-
-        if ('' == $pubKey) {
+        if (!$pubKey = curl_exec($ch)) {
             return [false, ['CallbackFailed' => 'curl is fail']];
         }
 
@@ -218,10 +268,13 @@ class OssAdapter implements FilesystemAdapter
         $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
 
         if (1 !== $ok) {
+            curl_close($ch);
+
             return [false, ['CallbackFailed' => 'verify is fail, Illegal data']];
         }
 
         parse_str($body, $data);
+        curl_close($ch);
 
         return [true, $data];
     }
@@ -229,13 +282,18 @@ class OssAdapter implements FilesystemAdapter
     /**
      * oss 直传配置.
      *
-     * @param null $callBackUrl
-     *
-     * @return false|string
-     *
-     * @throws \Exception
+     * @param string $prefix 目录前缀
+     * @param null $callBackUrl 回调地址
+     * @param array $customData 自定义参数
+     * @param int $expire 过期时间（秒）
+     * @param array $systemData 系统接收参数，回调时会返回
+     * @param array $policyData 自定义 policy 参数
+     *                          see: https://help.aliyun.com/zh/oss/developer-reference/postobject#section-d5z-1ww-wdb
+     * @return string
+     * @throws \JsonException|\InvalidArgumentException|\DateMalformedStringException
+     * @see https://help.aliyun.com/zh/oss/use-cases/overview-20
      */
-    public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, int $contentLengthRangeValue = 1048576000, array $systemData = [], array $policyData = [])
+    public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, array $systemData = [], array $policyData = []): string
     {
         $prefix = $this->prefixer->prefixPath($prefix);
 
@@ -245,7 +303,7 @@ class OssAdapter implements FilesystemAdapter
             $system = self::SYSTEM_FIELD;
         } else {
             foreach ($systemData as $key => $value) {
-                if (!in_array($value, self::SYSTEM_FIELD)) {
+                if (!in_array($value, self::SYSTEM_FIELD, true)) {
                     throw new \InvalidArgumentException("Invalid oss system filed: {$value}");
                 }
                 $system[$key] = $value;
@@ -267,33 +325,41 @@ class OssAdapter implements FilesystemAdapter
             'callbackBody' => urldecode(http_build_query(array_merge($system, $data))),
             'callbackBodyType' => 'application/x-www-form-urlencoded',
         ];
-        $callbackString = json_encode($callbackParam);
+        $callbackString = json_encode($callbackParam, JSON_THROW_ON_ERROR);
         $base64CallbackBody = base64_encode($callbackString);
 
         $now = time();
         $end = $now + $expire;
         $expiration = $this->gmt_iso8601($end);
 
-        // 最大文件大小.用户可以自己设置
-        $condition = [
-            0 => 'content-length-range',
-            1 => 0,
-            2 => $contentLengthRangeValue,
-        ];
-        $conditions[] = $condition;
-
-        $start = [
+        // 如果用户没有设置文件大小，需要设置默认值
+        $hasContentLengthRange = false;
+        $contentLengthRangeKey = 'content-length-range';
+        foreach ($policyData as $item) {
+            if (isset($item[0]) && $item[0] === $contentLengthRangeKey) {
+                $hasContentLengthRange = true;
+                break;
+            }
+        }
+        if (!$hasContentLengthRange) {
+            $condition = [
+                0 => $contentLengthRangeKey,
+                1 => 0, // min: 0
+                2 => 1048576000, // max: 1GB
+            ];
+            $conditions[] = $condition;
+        }
+        $conditions[] = [
             0 => 'starts-with',
             1 => '$key',
             2 => $prefix,
         ];
-        $conditions[] = $start;
 
         $arr = [
             'expiration' => $expiration,
             'conditions' => array_merge($conditions, $policyData), // 将自定义policy参数一起合并
         ];
-        $policy = json_encode($arr);
+        $policy = json_encode($arr, JSON_THROW_ON_ERROR);
         $base64Policy = base64_encode($policy);
         $stringToSign = $base64Policy;
         $signature = base64_encode(hash_hmac('sha1', $stringToSign, $this->accessKeySecret, true));
@@ -308,21 +374,21 @@ class OssAdapter implements FilesystemAdapter
         $response['callback-var'] = $callbackVar;
         $response['dir'] = $prefix;  // 这个参数是设置用户上传文件时指定的前缀。
 
-        return json_encode($response);
+        return json_encode($response, JSON_THROW_ON_ERROR);
     }
 
     /**
      * sign url.
      *
-     * @return false|\OSS\Http\ResponseCore|string
+     * @return false|string
      */
-    public function getTemporaryUrl($path, $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET)
+    public function getTemporaryUrl(string $path, int $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET): bool|string
     {
         $path = $this->prefixer->prefixPath($path);
 
         try {
-            $path = $this->client->signUrl($this->bucket, $path, $timeout, $method, $options);
-        } catch (OssException $exception) {
+            $path = $this->client->signUrl($this->bucketName, $path, $timeout, $method, $options);
+        } catch (OssException) {
             return false;
         }
 
@@ -335,7 +401,7 @@ class OssAdapter implements FilesystemAdapter
         $options = $config->get('options', []);
 
         try {
-            $this->client->putObject($this->bucket, $path, $contents, $options);
+            $this->client->putObject($this->bucketName, $path, $contents, $options);
         } catch (\Exception $exception) {
             throw UnableToWriteFile::atLocation($path, $exception->getMessage());
         }
@@ -343,6 +409,8 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * Write a new file using a stream.
+     *
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function writeStream(string $path, $contents, Config $config): void
     {
@@ -350,7 +418,7 @@ class OssAdapter implements FilesystemAdapter
         $options = $config->get('options', []);
 
         try {
-            $this->client->uploadStream($this->bucket, $path, $contents, $options);
+            $this->client->uploadStream($this->bucketName, $path, $contents, $options);
         } catch (OssException $exception) {
             throw UnableToWriteFile::atLocation($path, $exception->getErrorCode(), $exception);
         }
@@ -361,39 +429,45 @@ class OssAdapter implements FilesystemAdapter
         try {
             $this->copy($source, $destination, $config);
             $this->delete($source);
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
             throw UnableToMoveFile::fromLocationTo($source, $destination);
         }
     }
 
+    /**
+     * @throws \OSS\Http\RequestCore_Exception
+     */
     public function copy(string $source, string $destination, Config $config): void
     {
         $path = $this->prefixer->prefixPath($source);
         $newPath = $this->prefixer->prefixPath($destination);
 
         try {
-            $this->client->copyObject($this->bucket, $path, $this->bucket, $newPath);
-        } catch (OssException $exception) {
+            $this->client->copyObject($this->bucketName, $path, $this->bucketName, $newPath);
+        } catch (OssException) {
             throw UnableToCopyFile::fromLocationTo($source, $destination);
         }
     }
 
     /**
      * delete a file.
+     *
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function delete(string $path): void
     {
         $path = $this->prefixer->prefixPath($path);
 
         try {
-            $this->client->deleteObject($this->bucket, $path);
-        } catch (OssException $ossException) {
+            $this->client->deleteObject($this->bucketName, $path);
+        } catch (OssException) {
             throw UnableToDeleteFile::atLocation($path);
         }
     }
 
     /**
-     * @throws OssException
+     * @throws OssException|\OSS\Http\RequestCore_Exception
+     * @throws \Exception
      */
     public function deleteDirectory(string $path): void
     {
@@ -406,22 +480,25 @@ class OssAdapter implements FilesystemAdapter
                     continue;
                 }
                 $files[] = $this->prefixer->prefixPath($content->path());
-                if ($i && 0 == $i % 100) {
-                    $this->client->deleteObjects($this->bucket, $files);
+                if ($i && 0 === $i % 100) {
+                    $this->client->deleteObjects($this->bucketName, $files);
                     $files = [];
                 }
             }
-            !empty($files) && $this->client->deleteObjects($this->bucket, $files);
-            $this->client->deleteObject($this->bucket, $this->prefixer->prefixDirectoryPath($path));
+            !empty($files) && $this->client->deleteObjects($this->bucketName, $files);
+            $this->client->deleteObject($this->bucketName, $this->prefixer->prefixDirectoryPath($path));
         } catch (OssException $exception) {
             throw UnableToDeleteDirectory::atLocation($path, $exception->getErrorCode(), $exception);
         }
     }
 
+    /**
+     * @throws \OSS\Http\RequestCore_Exception
+     */
     public function createDirectory(string $path, Config $config): void
     {
         try {
-            $this->client->createObjectDir($this->bucket, $this->prefixer->prefixPath($path));
+            $this->client->createObjectDir($this->bucketName, $this->prefixer->prefixPath($path));
         } catch (OssException $exception) {
             throw UnableToCreateDirectory::dueToFailure($path, $exception);
         }
@@ -430,7 +507,9 @@ class OssAdapter implements FilesystemAdapter
     /**
      * visibility.
      *
-     * @return array|bool|false
+     * @param string $path
+     * @param string $visibility
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function setVisibility(string $path, string $visibility): void
     {
@@ -439,16 +518,19 @@ class OssAdapter implements FilesystemAdapter
         $acl = Visibility::PUBLIC === $visibility ? OssClient::OSS_ACL_TYPE_PUBLIC_READ : OssClient::OSS_ACL_TYPE_PRIVATE;
 
         try {
-            $this->client->putObjectAcl($this->bucket, $object, $acl);
+            $this->client->putObjectAcl($this->bucketName, $object, $acl);
         } catch (OssException $exception) {
             throw UnableToSetVisibility::atLocation($path, $exception->getMessage());
         }
     }
 
+    /**
+     * @throws \OSS\Http\RequestCore_Exception
+     */
     public function visibility(string $path): FileAttributes
     {
         try {
-            $acl = $this->client->getObjectAcl($this->bucket, $this->prefixer->prefixPath($path), []);
+            $acl = $this->client->getObjectAcl($this->bucketName, $this->prefixer->prefixPath($path), []);
         } catch (OssException $exception) {
             throw UnableToRetrieveMetadata::visibility($path, $exception->getMessage());
         }
@@ -459,18 +541,25 @@ class OssAdapter implements FilesystemAdapter
     /**
      * Check whether a file exists.
      *
-     * @return array|bool|null
+     * @param string $path
+     * @return bool
+     * @throws \OSS\Core\OssException
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function fileExists(string $path): bool
     {
         $path = $this->prefixer->prefixPath($path);
 
-        return $this->client->doesObjectExist($this->bucket, $path);
+        return $this->client->doesObjectExist($this->bucketName, $path);
     }
 
+    /**
+     * @throws \OSS\Core\OssException
+     * @throws \OSS\Http\RequestCore_Exception
+     */
     public function directoryExists(string $path): bool
     {
-        return $this->client->doesObjectExist($this->bucket, $this->prefixer->prefixDirectoryPath($path));
+        return $this->client->doesObjectExist($this->bucketName, $this->prefixer->prefixDirectoryPath($path));
     }
 
     /**
@@ -495,7 +584,7 @@ class OssAdapter implements FilesystemAdapter
         $path = $this->prefixer->prefixPath($path);
 
         try {
-            return $this->client->getObject($this->bucket, $path);
+            return $this->client->getObject($this->bucketName, $path);
         } catch (\Exception $exception) {
             throw UnableToReadFile::fromLocation($path, $exception->getMessage());
         }
@@ -505,13 +594,14 @@ class OssAdapter implements FilesystemAdapter
      * read a file stream.
      *
      * @return array|bool|false
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function readStream(string $path)
     {
         $stream = fopen('php://temp', 'w+b');
 
         try {
-            fwrite($stream, $this->client->getObject($this->bucket, $path, [OssClient::OSS_FILE_DOWNLOAD => $stream]));
+            fwrite($stream, $this->client->getObject($this->bucketName, $path, [OssClient::OSS_FILE_DOWNLOAD => $stream]));
         } catch (OssException $exception) {
             fclose($stream);
             throw UnableToReadFile::fromLocation($path, $exception->getMessage());
@@ -535,7 +625,7 @@ class OssAdapter implements FilesystemAdapter
             ];
 
             try {
-                $listObjectInfo = $this->client->listObjects($this->bucket, $options);
+                $listObjectInfo = $this->client->listObjects($this->bucketName, $options);
                 $nextMarker = $listObjectInfo->getNextMarker();
             } catch (OssException $exception) {
                 throw new \Exception($exception->getErrorMessage(), 0, $exception);
@@ -548,8 +638,8 @@ class OssAdapter implements FilesystemAdapter
                     continue;
                 }
                 yield new DirectoryAttributes($subPath);
-                if (true === $deep) {
-                    $contents = $this->listContents($subPath, $deep);
+                if ($deep) {
+                    $contents = $this->listContents($subPath, true);
                     foreach ($contents as $content) {
                         yield $content;
                     }
@@ -574,15 +664,18 @@ class OssAdapter implements FilesystemAdapter
         }
     }
 
+    /**
+     * @throws \OSS\Http\RequestCore_Exception
+     */
     public function getMetadata($path): FileAttributes
     {
         try {
-            $result = $this->client->getObjectMeta($this->bucket, $this->prefixer->prefixPath($path));
+            $result = $this->client->getObjectMeta($this->bucketName, $this->prefixer->prefixPath($path));
         } catch (OssException $exception) {
             throw UnableToRetrieveMetadata::create($path, 'metadata', $exception->getErrorCode(), $exception);
         }
 
-        $size = isset($result['content-length']) ? intval($result['content-length']) : 0;
+        $size = (int)($result['content-length'] ?? 0);
         $timestamp = isset($result['last-modified']) ? strtotime($result['last-modified']) : 0;
         $mimetype = $result['content-type'] ?? '';
 
@@ -592,7 +685,9 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get the size of file.
      *
-     * @return array|false
+     * @param string $path
+     * @return \League\Flysystem\FileAttributes
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function fileSize(string $path): FileAttributes
     {
@@ -607,7 +702,9 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get mime type.
      *
-     * @return array|false
+     * @param string $path
+     * @return \League\Flysystem\FileAttributes
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function mimeType(string $path): FileAttributes
     {
@@ -622,7 +719,9 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get timestamp.
      *
-     * @return array|false
+     * @param string $path
+     * @return \League\Flysystem\FileAttributes
+     * @throws \OSS\Http\RequestCore_Exception
      */
     public function lastModified(string $path): FileAttributes
     {
@@ -642,29 +741,33 @@ class OssAdapter implements FilesystemAdapter
         if ($this->isCName) {
             $domain = $this->endpoint;
         } else {
-            $domain = $this->bucket.'.'.$this->endpoint;
+            $domain = $this->bucketName.'.'.$this->endpoint;
         }
 
         if ($this->useSSL) {
-            $domain = "https://{$domain}";
+            $scheme = 'https';
         } else {
-            $domain = "http://{$domain}";
+            $scheme = 'http';
         }
 
-        return rtrim($domain, '/').'/';
+        return rtrim($scheme.'://'.$domain, '/').'/';
     }
 
     /**
      * Check the endpoint to see if SSL can be used.
+     *
+     * @return $this
      */
-    protected function checkEndpoint()
+    protected function checkEndpoint(): OssAdapter
     {
-        if (0 === strpos($this->endpoint, 'http://')) {
+        if (str_starts_with($this->endpoint, 'http://')) {
             $this->endpoint = substr($this->endpoint, strlen('http://'));
             $this->useSSL = false;
-        } elseif (0 === strpos($this->endpoint, 'https://')) {
+        } elseif (str_starts_with($this->endpoint, 'https://')) {
             $this->endpoint = substr($this->endpoint, strlen('https://'));
             $this->useSSL = true;
         }
+
+        return $this;
     }
 }

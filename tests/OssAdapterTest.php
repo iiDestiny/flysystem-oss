@@ -31,7 +31,7 @@ class OssAdapterTest extends TestCase
     {
         $extra = [
             'signatureVersion' => OssClient::OSS_SIGNATURE_VERSION_V4,
-            'region'           => 'cn-beijing',
+            'region' => 'cn-beijing',
         ];
         $adapter = new OssAdapter(
             '<accessKeyId>',
@@ -44,9 +44,9 @@ class OssAdapterTest extends TestCase
                 'test' => [
                     'access_key' => '<test-accessKey>',
                     'secret_key' => '<test-secretKey>',
-                    'bucket'     => '<test-bucket>',
-                    'endpoint'   => 'https://oss-cn-beijing.aliyuncs.com',
-                    'isCName'    => false,
+                    'bucket' => '<test-bucket>',
+                    'endpoint' => 'https://oss-cn-beijing.aliyuncs.com',
+                    'isCName' => false,
                 ],
             ],
             ...$extra,

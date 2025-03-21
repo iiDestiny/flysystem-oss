@@ -382,9 +382,10 @@ class OssAdapter implements FilesystemAdapter
      *
      * @return false|string
      */
-    public function getTemporaryUrl(string $path, int $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET): bool|string
+    public function getTemporaryUrl(string $path, $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET): bool|string
     {
         $path = $this->prefixer->prefixPath($path);
+        $timeout = $timeout instanceof \DateTimeInterface ? $timeout->getTimestamp() - time() : (int) $timeout;
 
         try {
             $path = $this->client->signUrl($this->bucketName, $path, $timeout, $method, $options);

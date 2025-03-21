@@ -43,14 +43,14 @@ class OssAdapter implements FilesystemAdapter
     // 系统参数
 
     public const SYSTEM_FIELD = [
-        'bucket'   => '${bucket}',
-        'etag'     => '${etag}',
+        'bucket' => '${bucket}',
+        'etag' => '${etag}',
         'filename' => '${object}',
-        'size'     => '${size}',
+        'size' => '${size}',
         'mimeType' => '${mimeType}',
-        'height'   => '${imageInfo.height}',
-        'width'    => '${imageInfo.width}',
-        'format'   => '${imageInfo.format}',
+        'height' => '${imageInfo.height}',
+        'width' => '${imageInfo.width}',
+        'format' => '${imageInfo.format}',
     ];
 
     protected $accessKeyId;
@@ -88,9 +88,6 @@ class OssAdapter implements FilesystemAdapter
      */
     protected $useSSL = false;
 
-    /**
-     * @var string|null
-     */
     protected ?string $cdnUrl = null;
 
     /**
@@ -118,8 +115,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * init default bucket adapter.
-     *
-     * @return \Iidestiny\Flysystem\Oss\OssAdapter
      */
     protected function initDefaultBucketAdapter(): OssAdapter
     {
@@ -133,7 +128,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * set cdn url.
      *
-     * @param string|null $url
      * @return $this
      */
     public function setCdnUrl(?string $url): OssAdapter
@@ -152,6 +146,7 @@ class OssAdapter implements FilesystemAdapter
      * get bucket adapter by bucket name.
      *
      * @return $this
+     *
      * @throws \InvalidArgumentException
      */
     public function bucket($bucket): OssAdapter
@@ -162,8 +157,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * create bucket adapter by bucket name.
      *
-     * @param string $bucket
-     * @return \Iidestiny\Flysystem\Oss\OssAdapter
      * @throws \InvalidArgumentException
      */
     protected function createBucketAdapter(string $bucket): OssAdapter
@@ -191,9 +184,6 @@ class OssAdapter implements FilesystemAdapter
 
     /**
      * extract extra config.
-     *
-     * @param array $config
-     * @return array
      */
     protected function extraConfig(array $config): array
     {
@@ -212,7 +202,7 @@ class OssAdapter implements FilesystemAdapter
 
         $this->client = new OssClient([
             'endpoint' => rtrim($this->endpoint, '/'),
-            'cname'    => $this->isCName,
+            'cname' => $this->isCName,
             'provider' => $provider,
             ...$this->params,
         ]);
@@ -282,15 +272,16 @@ class OssAdapter implements FilesystemAdapter
     /**
      * oss 直传配置.
      *
-     * @param string $prefix 目录前缀
-     * @param null $callBackUrl 回调地址
-     * @param array $customData 自定义参数
-     * @param int $expire 过期时间（秒）
-     * @param array $systemData 系统接收参数，回调时会返回
-     * @param array $policyData 自定义 policy 参数
-     *                          see: https://help.aliyun.com/zh/oss/developer-reference/postobject#section-d5z-1ww-wdb
-     * @return string
+     * @param string $prefix      目录前缀
+     * @param null   $callBackUrl 回调地址
+     * @param array  $customData  自定义参数
+     * @param int    $expire      过期时间（秒）
+     * @param array  $systemData  系统接收参数，回调时会返回
+     * @param array  $policyData  自定义 policy 参数
+     *                            see: https://help.aliyun.com/zh/oss/developer-reference/postobject#section-d5z-1ww-wdb
+     *
      * @throws \JsonException|\InvalidArgumentException|\DateMalformedStringException
+     *
      * @see https://help.aliyun.com/zh/oss/use-cases/overview-20
      */
     public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, array $systemData = [], array $policyData = []): string
@@ -508,8 +499,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * visibility.
      *
-     * @param string $path
-     * @param string $visibility
      * @throws \OSS\Http\RequestCore_Exception
      */
     public function setVisibility(string $path, string $visibility): void
@@ -542,8 +531,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * Check whether a file exists.
      *
-     * @param string $path
-     * @return bool
      * @throws \OSS\Core\OssException
      * @throws \OSS\Http\RequestCore_Exception
      */
@@ -595,6 +582,7 @@ class OssAdapter implements FilesystemAdapter
      * read a file stream.
      *
      * @return array|bool|false
+     *
      * @throws \OSS\Http\RequestCore_Exception
      */
     public function readStream(string $path)
@@ -676,7 +664,7 @@ class OssAdapter implements FilesystemAdapter
             throw UnableToRetrieveMetadata::create($path, 'metadata', $exception->getErrorCode(), $exception);
         }
 
-        $size = (int)($result['content-length'] ?? 0);
+        $size = (int) ($result['content-length'] ?? 0);
         $timestamp = isset($result['last-modified']) ? strtotime($result['last-modified']) : 0;
         $mimetype = $result['content-type'] ?? '';
 
@@ -686,8 +674,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get the size of file.
      *
-     * @param string $path
-     * @return \League\Flysystem\FileAttributes
      * @throws \OSS\Http\RequestCore_Exception
      */
     public function fileSize(string $path): FileAttributes
@@ -703,8 +689,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get mime type.
      *
-     * @param string $path
-     * @return \League\Flysystem\FileAttributes
      * @throws \OSS\Http\RequestCore_Exception
      */
     public function mimeType(string $path): FileAttributes
@@ -720,8 +704,6 @@ class OssAdapter implements FilesystemAdapter
     /**
      * get timestamp.
      *
-     * @param string $path
-     * @return \League\Flysystem\FileAttributes
      * @throws \OSS\Http\RequestCore_Exception
      */
     public function lastModified(string $path): FileAttributes

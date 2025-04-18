@@ -56,4 +56,40 @@ class OssAdapterTest extends TestCase
         $this->assertInstanceOf(OssAdapter::class, $adapter->bucket('test'));
         $this->assertEquals('<test-bucket>', $adapter->bucket('test')->getBucketName());
     }
+
+
+    public function testPolicyTokenSignatureV4(): void
+    {
+        $extra = [
+            'signatureVersion' => OssClient::OSS_SIGNATURE_VERSION_V4,
+            'region'           => 'cn-hangzhou',
+        ];
+        $adapter = new OssAdapter(
+            '<accessKeyId>',
+            '<accessKeySecret>',
+            'https://oss-cn-beijing.aliyuncs.com',
+            '<bucket>',
+            false,
+            '<prefix>',
+            [],
+            ...$extra,
+        );
+
+       $result = $adapter->policyTokenSignatureV4([
+            'expire' => 30*60, // 30 minutes
+            'conditions' => [
+                [
+                    'eq', '$success_action_status', '200',
+                ],
+                [
+                    'content-length-range', 1, 1048576000, // file size between 1 byte and 1GB
+                ]
+            ]
+        ]);
+
+       print_r($result);
+
+       $this->assertNotEmpty($result['policy_token']);
+       $this->assertNotEmpty($result['policy_token_json']);
+    }
 }

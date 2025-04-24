@@ -291,6 +291,7 @@ class OssAdapter implements FilesystemAdapter
      *                          see: https://help.aliyun.com/zh/oss/developer-reference/postobject#section-d5z-1ww-wdb
      * @return string
      * @throws \JsonException|\InvalidArgumentException|\DateMalformedStringException
+     * @deprecated use static::policyTokenSignatureV4()
      * @see https://help.aliyun.com/zh/oss/use-cases/overview-20
      */
     public function signatureConfig(string $prefix = '', $callBackUrl = null, array $customData = [], int $expire = 30, array $systemData = [], array $policyData = []): string
@@ -375,6 +376,167 @@ class OssAdapter implements FilesystemAdapter
         $response['dir'] = $prefix;  // 这个参数是设置用户上传文件时指定的前缀。
 
         return json_encode($response, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Generate a policy token for v4 signature.
+     *
+     * @param array{
+     *     bucket: string,
+     *     prefix: string,
+     *     expire: int,
+     *     conditions: array<array>,
+     *     callback_url: string,
+     *     callback_body_system_variables: array<string, mixed>,
+     *     callback_body_custom_variables: array<string, mixed>,
+     * } $option ...
+     * @return array{policy_token: array, policy_token_json: string}
+     * @throws \InvalidArgumentException|\JsonException
+     * @link https://help.aliyun.com/zh/oss/developer-reference/postobject#section-d5z-1ww-wdb
+     * @link https://help.aliyun.com/zh/oss/use-cases/obtain-signature-information-from-the-server-and-upload-data-to-oss
+     * @link https://help.aliyun.com/zh/oss/use-cases/overview-20
+     */
+    public function policyTokenSignatureV4(array $option = []): array
+    {
+        // v4 must use Region
+        if (empty($this->params['region'])) {
+            throw new \InvalidArgumentException('Region is required for v4 signature.');
+        }
+        $region = $this->params['region'];
+
+        // expires
+        $utcTime = new \DateTime('now', new \DateTimeZone('UTC'));
+        $date = $utcTime->format('Ymd');
+        $xOSSDate = $utcTime->format('Ymd\THis\Z');
+        $expires = (int)($option['expire'] ?? 60);
+        if ($expires <= 0) {
+            $expires = 60; // 60 seconds
+        }
+        $expiration = (clone $utcTime)->add(new \DateInterval('PT' . $expires . 'S'));
+
+        // conditions
+        $ossService = 'oss';
+        $xOSSSignatureVersion = 'OSS4-HMAC-SHA256';
+        $xOSSCredential = sprintf(
+            '%s/%s/%s/%s/aliyun_v4_request',
+            $this->accessKeyId,
+            $date,
+            $region,
+            $ossService
+        );
+        $bucket = $option['bucket'] ?? '';
+        if (!$bucket) {
+            $bucket = $this->getBucketName();
+        }
+        $securityToken = $this->params['security_token'] ?? '';
+        $conditions = [
+            ['bucket' => $bucket],
+            ['x-oss-security-token' => $securityToken],
+            ['x-oss-signature-version' => $xOSSSignatureVersion],
+            ['x-oss-credential' => $xOSSCredential],
+            ['x-oss-date' => $xOSSDate],
+        ];
+
+        if (!empty($option['conditions'])) {
+            $conditions = array_merge($conditions, $option['conditions']);
+        }
+
+        // check if it has "content-length-range"
+        $hasContentLength = false;
+        $contentLengthRangeKey = 'content-length-range';
+        foreach ($option['conditions'] as $condition) {
+            if (isset($condition[0]) && $condition[0] === $contentLengthRangeKey) {
+                $hasContentLength = true;
+                break;
+            }
+        }
+        // If there is no "content-length-range" condition, add the default value
+        // min: 0, max: 1048576000 - 1GiB
+        if (!$hasContentLength) {
+            $conditions[] = [$contentLengthRangeKey, 0, 1048576000];
+        }
+
+        // prefix
+        $prefix = $this->prefixer->prefixPath($option['prefix'] ?? '');
+        $conditions[] = ['starts-with', '$key', $prefix];
+
+        // policy json
+        $policyMap = [
+            'conditions' => $conditions,
+            'expiration' => $expiration->format('Y-m-d\TH:i:s.000\Z'),
+        ];
+        $policyJSON = json_encode($policyMap, JSON_THROW_ON_ERROR);
+
+        // parameters waiting for signature
+        $stringToSign = base64_encode($policyJSON);
+
+        // build signature signing key
+        $hmacHash = 'sha256';
+        $dateHash = hash_hmac($hmacHash, $date, 'aliyun_v4' . $this->accessKeySecret, true);
+        $dateRegionKey = hash_hmac($hmacHash, $region, $dateHash, true);
+        $dateRegionServiceKey = hash_hmac($hmacHash, $ossService, $dateRegionKey, true);
+        $signingKey = hash_hmac($hmacHash, 'aliyun_v4_request', $dateRegionServiceKey, true);
+
+        // generate a signature
+        $signingHash = hash_hmac($hmacHash, $stringToSign, $signingKey, true);
+        $signature = bin2hex($signingHash);
+
+        // build callback parameters
+        $callbackBodyBase64 = '';
+        if (!empty($option['callback_url'])) {
+            // system variables
+            $systemVariables = [];
+            if (empty($option['callback_body_system_variables'])) {
+                $systemVariables = self::SYSTEM_FIELD;
+            } else {
+                foreach ($option['callback_body_system_variables'] as $key => $value) {
+                    if (!in_array($value, self::SYSTEM_FIELD, true)) {
+                        throw new \InvalidArgumentException('Invalid OSS callback system field: ' . $value);
+                    }
+                    $systemVariables[$key] = $value;
+                }
+            }
+
+            // user-defined variables
+            $customVariables = [];
+            if (!empty($option['callback_body_custom_variables'])) {
+                foreach ($option['callback_body_custom_variables'] as $key => $value) {
+                    $customVariables[$key] = '${x:' . $key . '}';
+                }
+            }
+
+            // generate callback parameters signature
+            $callbackBody = http_build_query(array_merge($systemVariables, $customVariables));
+            $callbackParam = [
+                'callbackUrl' => $option['callback_url'],
+                'callbackBody' => $callbackBody,
+                'callbackBodyType' => 'application/x-www-form-urlencoded',
+            ];
+            $callbackBodyString = json_encode($callbackParam, JSON_THROW_ON_ERROR);
+            $callbackBodyBase64 = base64_encode($callbackBodyString);
+        }
+
+        // build the form parameters
+        $policyToken = [
+            'policy' => $stringToSign,
+            'security_token' => $securityToken,
+            'x_oss_signature_version' => $xOSSSignatureVersion,
+            'x_oss_credential' => $xOSSCredential,
+            'x_oss_date' => $xOSSDate,
+            'signature' => $signature,
+            'host' => $this->normalizeHost(),
+            'dir' => $prefix,
+            'callback' => $callbackBodyBase64,
+            'expire' => $expiration->getTimestamp(),
+            'timeout' => $expires,
+            'bucket' => $bucket,
+        ];
+        $policyTokenString = json_encode($policyToken, JSON_THROW_ON_ERROR);
+
+        return [
+            'policy_token' => $policyToken,
+            'policy_token_json' => $policyTokenString,
+        ];
     }
 
     /**

@@ -450,7 +450,7 @@ class OssAdapter implements FilesystemAdapter
                 break;
             }
         }
-        // If there is no "content-length-range condition", add the default configuration
+        // If there is no "content-length-range" condition, add the default value
         // min: 0, max: 1048576000 - 1GiB
         if (!$hasContentLength) {
             $conditions[] = [$contentLengthRangeKey, 0, 1048576000];
@@ -491,7 +491,7 @@ class OssAdapter implements FilesystemAdapter
             } else {
                 foreach ($option['callback_body_system_variables'] as $key => $value) {
                     if (!in_array($value, self::SYSTEM_FIELD, true)) {
-                        throw new \InvalidArgumentException('Invalid oss system filed: ' . $value);
+                        throw new \InvalidArgumentException('Invalid OSS callback system field: ' . $value);
                     }
                     $systemVariables[$key] = $value;
                 }
@@ -508,9 +508,9 @@ class OssAdapter implements FilesystemAdapter
             // generate callback parameters signature
             $callbackBody = http_build_query(array_merge($systemVariables, $customVariables));
             $callbackParam = [
-                'CallbackUrl' => $option['callback_url'],
-                'CallbackBody' => $callbackBody,
-                'CallbackBodyType' => 'application/x-www-form-urlencoded',
+                'callbackUrl' => $option['callback_url'],
+                'callbackBody' => $callbackBody,
+                'callbackBodyType' => 'application/x-www-form-urlencoded',
             ];
             $callbackBodyString = json_encode($callbackParam, JSON_THROW_ON_ERROR);
             $callbackBodyBase64 = base64_encode($callbackBodyString);

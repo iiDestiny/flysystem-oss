@@ -229,13 +229,20 @@ class OssAdapter implements FilesystemAdapter
     }
 
     /**
-     * 验签.
+     * Callback 验签
+     *
+     * @doc https://help.aliyun.com/zh/oss/developer-reference/callback
+     * @param  string  $authorizationBase64 Base64 编码的签名
+     * @param  string  $pubKeyUrlBase64 Base64 编码的公钥 URL
+     * @param  string  $path 请求路径
+     * @param  string  $body 请求体
+     * @return array
      */
-    public function verify(): array
+    public function verify($authorizationBase64 = '', $pubKeyUrlBase64 = '', $path = '', $body = ''): array
     {
         // oss 前面 header、公钥 header
-        $authorizationBase64 = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $pubKeyUrlBase64 = $_SERVER['HTTP_X_OSS_PUB_KEY_URL'] ?? '';
+        $authorizationBase64 = $authorizationBase64 ?: $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $pubKeyUrlBase64 = $pubKeyUrlBase64 ?: $_SERVER['HTTP_X_OSS_PUB_KEY_URL'] ?? '';
         // 验证失败
         if (empty($authorizationBase64) || empty($pubKeyUrlBase64)) {
             return [false, ['CallbackFailed' => 'authorization or pubKeyUrl is null']];
@@ -255,9 +262,9 @@ class OssAdapter implements FilesystemAdapter
         }
 
         // 获取回调 body
-        $body = file_get_contents('php://input');
+        $body = $body ?: file_get_contents('php://input');
         // 拼接待签名字符串
-        $path = $_SERVER['REQUEST_URI'];
+        $path = $path ?: $_SERVER['REQUEST_URI'] ?? '';
         $pos = strpos($path, '?');
         if (false === $pos) {
             $authStr = urldecode($path)."\n".$body;

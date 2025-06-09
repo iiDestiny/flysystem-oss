@@ -229,7 +229,14 @@ class OssAdapter implements FilesystemAdapter
     }
 
     /**
-     * 验签.
+     * Callback 验签
+     *
+     * @doc https://help.aliyun.com/zh/oss/developer-reference/callback
+     * @param  string  $authorizationBase64 Base64 编码的签名
+     * @param  string  $pubKeyUrlBase64 Base64 编码的公钥 URL
+     * @param  string  $path 请求路径
+     * @param  string  $body 请求体
+     * @return array
      */
     public function verify($authorizationBase64 = '', $pubKeyUrlBase64 = '', $path = '', $body = ''): array
     {

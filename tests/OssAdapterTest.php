@@ -31,7 +31,7 @@ class OssAdapterTest extends TestCase
     {
         $extra = [
             'signatureVersion' => OssClient::OSS_SIGNATURE_VERSION_V4,
-            'region'           => 'cn-beijing',
+            'region' => 'cn-beijing',
         ];
         $adapter = new OssAdapter(
             '<accessKeyId>',
@@ -44,9 +44,9 @@ class OssAdapterTest extends TestCase
                 'test' => [
                     'access_key' => '<test-accessKey>',
                     'secret_key' => '<test-secretKey>',
-                    'bucket'     => '<test-bucket>',
-                    'endpoint'   => 'https://oss-cn-beijing.aliyuncs.com',
-                    'isCName'    => false,
+                    'bucket' => '<test-bucket>',
+                    'endpoint' => 'https://oss-cn-beijing.aliyuncs.com',
+                    'isCName' => false,
                 ],
             ],
             ...$extra,
@@ -57,12 +57,11 @@ class OssAdapterTest extends TestCase
         $this->assertEquals('<test-bucket>', $adapter->bucket('test')->getBucketName());
     }
 
-
     public function testPolicyTokenSignatureV4(): void
     {
         $extra = [
             'signatureVersion' => OssClient::OSS_SIGNATURE_VERSION_V4,
-            'region'           => 'cn-hangzhou',
+            'region' => 'cn-hangzhou',
         ];
         $adapter = new OssAdapter(
             '<accessKeyId>',
@@ -75,21 +74,21 @@ class OssAdapterTest extends TestCase
             ...$extra,
         );
 
-       $result = $adapter->policyTokenSignatureV4([
-            'expire' => 30*60, // 30 minutes
-            'conditions' => [
-                [
-                    'eq', '$success_action_status', '200',
-                ],
-                [
-                    'content-length-range', 1, 1048576000, // file size between 1 byte and 1GB
-                ]
-            ]
-        ]);
+        $result = $adapter->policyTokenSignatureV4([
+             'expire' => 30 * 60, // 30 minutes
+             'conditions' => [
+                 [
+                     'eq', '$success_action_status', '200',
+                 ],
+                 [
+                     'content-length-range', 1, 1048576000, // file size between 1 byte and 1GB
+                 ],
+             ],
+         ]);
 
-       print_r($result);
+        print_r($result);
 
-       $this->assertNotEmpty($result['policy_token']);
-       $this->assertNotEmpty($result['policy_token_json']);
+        $this->assertNotEmpty($result['policy_token']);
+        $this->assertNotEmpty($result['policy_token_json']);
     }
 }

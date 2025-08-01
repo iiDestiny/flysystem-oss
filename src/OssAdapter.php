@@ -431,11 +431,13 @@ class OssAdapter implements FilesystemAdapter
         $securityToken = $this->params['security_token'] ?? '';
         $conditions = [
             ['bucket' => $bucket],
-            ['x-oss-security-token' => $securityToken],
             ['x-oss-signature-version' => $xOSSSignatureVersion],
             ['x-oss-credential' => $xOSSCredential],
             ['x-oss-date' => $xOSSDate],
         ];
+        if ($securityToken) {
+            $conditions[] = ['x-oss-security-token' => $securityToken];
+        }
 
         if (!empty($option['conditions'])) {
             $conditions = array_merge($conditions, $option['conditions']);

@@ -436,7 +436,7 @@ class OssAdapter implements FilesystemAdapter
             ['x-oss-date' => $xOSSDate],
         ];
         if ($securityToken) {
-            $conditions[] = ['x-oss-security-token' => $securityToken],
+            $conditions[] = ['x-oss-security-token' => $securityToken];
         }
 
         if (!empty($option['conditions'])) {

@@ -770,6 +770,7 @@ class OssAdapter implements FilesystemAdapter
      */
     public function readStream(string $path)
     {
+        $path = $this->prefixer->prefixPath($path);
         $stream = fopen('php://temp', 'w+b');
 
         try {

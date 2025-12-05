@@ -25,6 +25,7 @@ use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToCreateDirectory;
 use League\Flysystem\UnableToDeleteDirectory;
 use League\Flysystem\UnableToDeleteFile;
+use League\Flysystem\UnableToGenerateTemporaryUrl;
 use League\Flysystem\UnableToMoveFile;
 use League\Flysystem\UnableToReadFile;
 use League\Flysystem\UnableToRetrieveMetadata;
@@ -551,7 +552,7 @@ class OssAdapter implements FilesystemAdapter
     /**
      * sign url.
      *
-     * @return false|string
+     * @return string
      */
     public function getTemporaryUrl(string $path, $timeout, array $options = [], string $method = OssClient::OSS_HTTP_GET): bool|string
     {
@@ -560,8 +561,8 @@ class OssAdapter implements FilesystemAdapter
 
         try {
             $path = $this->client->signUrl($this->bucketName, $path, $timeout, $method, $options);
-        } catch (OssException) {
-            return false;
+        } catch (OssException $exception) {
+            throw UnableToGenerateTemporaryUrl::dueToError($path, $exception);
         }
 
         return $path;

@@ -732,7 +732,14 @@ class OssAdapter implements FilesystemAdapter
      */
     public function directoryExists(string $path): bool
     {
-        return $this->client->doesObjectExist($this->bucketName, $this->prefixer->prefixDirectoryPath($path));
+        $directory = $this->prefixer->prefixDirectoryPath($path);
+
+        foreach ($this->listContents($directory, false) as $item) {
+            // 只要有对象，则目录视为存在
+            return true;
+        }
+
+        return false;
     }
 
     /**

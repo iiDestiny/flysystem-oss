@@ -16,8 +16,8 @@ trait SignatureTrait
     /**
      * gmt.
      *
-     * @param int $time
      * @return string
+     *
      * @throws \DateMalformedStringException
      */
     public function gmt_iso8601(int $time)

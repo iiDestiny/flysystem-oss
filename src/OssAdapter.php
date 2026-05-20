@@ -516,10 +516,9 @@ class OssAdapter implements FilesystemAdapter
             }
 
             // generate callback parameters signature
-            $callbackBody = http_build_query(array_merge($systemVariables, $customVariables));
             $callbackParam = [
                 'callbackUrl' => $option['callback_url'],
-                'callbackBody' => $callbackBody,
+                'callbackBody' => urldecode(http_build_query(array_merge($systemVariables, $customVariables))),
                 'callbackBodyType' => 'application/x-www-form-urlencoded',
             ];
             $callbackBodyString = json_encode($callbackParam, JSON_THROW_ON_ERROR);
